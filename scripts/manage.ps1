@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $versionUrl = 'https://static.adtidy.org/adguardhome/release/version.json'
 # トレイアプリの配布元（GitHub Releases）
-$trayRepo = 'hinatamaxxx/adguard-home-windows-tray'
+$trayRepo = 'hinatamaxxx/adguard-home-windows'
 # トレイアプリと共有する設定。管理者・SYSTEM だけが書き、ユーザーは読み取りのみ（install.ps1 がフォルダーの権限を設定）
 $settingsFile = Join-Path $env:ProgramData 'AdGuardHome\settings.json'
 

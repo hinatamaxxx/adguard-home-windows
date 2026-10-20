@@ -12,13 +12,15 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 表示の言語（Windows の表示言語が日本語なら日本語、それ以外は英語）
+$ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja'
+function T([string]$jaText, [string]$enText) { if ($ja) { $jaText } else { $enText } }
 $root = $PSScriptRoot
 Start-Transcript -Path (Join-Path $root 'install.log') -Force | Out-Null
 
 # トレイと manage.ps1 の共有設定（manage.ps1 と同じ形式）。レジストリには保存しない
 $dataDir = Join-Path $env:ProgramData 'AdGuardHome'
 $settingsFile = Join-Path $dataDir 'settings.json'
-$legacyKey = 'HKLM:\SOFTWARE\AdGuardHomeTray'
 
 function Get-Settings {
     $h = @{}
@@ -115,7 +117,7 @@ public static class LnkAppId
 try {
     $principal =[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        throw '管理者権限で実行してください。'
+        throw (T '管理者権限で実行してください。' 'Run this as an administrator.')
     }
 
     $logDir = Join-Path $dataDir 'logs'
@@ -123,7 +125,7 @@ try {
 
     # ProgramData\AdGuardHome は SYSTEM・管理者が書き、ユーザーは読み取りのみ（既定の継承では Users に書き込みが付くため外す）
     & icacls.exe $dataDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)RX' /Q | Out-Null
-    if ($LASTEXITCODE) { throw "フォルダーの権限設定に失敗しました ($LASTEXITCODE)" }
+    if ($LASTEXITCODE) { throw ((T "フォルダーの権限設定に失敗しました" "Could not set folder permissions") + " ($LASTEXITCODE)") }
     & icacls.exe $dataDir /setowner '*S-1-5-32-544' /T /C /Q | Out-Null
     & icacls.exe "$dataDir\*" /reset /T /C /Q | Out-Null
 
@@ -145,14 +147,17 @@ try {
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             $tmp = Join-Path $env:TEMP ('agh-' + [guid]::NewGuid())
             New-Item -ItemType Directory $tmp | Out-Null
-            $zip = Join-Path $tmp 'AdGuardHome_windows_amd64.zip'
-            Invoke-WebRequest 'https://static.adtidy.org/adguardhome/release/AdGuardHome_windows_amd64.zip' -OutFile $zip -UseBasicParsing
+            # CPU に合った版（x64 / ARM64）。PowerShell がエミュレーションで動いていても OS 本来の種類を見る
+            $arch = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
+            $pkgName = if ($arch -eq 'ARM64') { 'AdGuardHome_windows_arm64.zip' } else { 'AdGuardHome_windows_amd64.zip' }
+            $zip = Join-Path $tmp $pkgName
+            Invoke-WebRequest "https://static.adtidy.org/adguardhome/release/$pkgName" -OutFile $zip -UseBasicParsing
             Expand-Archive $zip (Join-Path $tmp 'x')
             $AdGuardExe = Join-Path $tmp 'x\AdGuardHome\AdGuardHome.exe'
         }
         $sig = Get-AuthenticodeSignature $AdGuardExe
         if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'O=Adguard Software Limited') {
-            throw "AdGuardHome.exe の署名を確認できません: $($sig.Status)"
+            throw ((T "AdGuardHome.exe の署名を確認できません: " "Could not verify the signature of AdGuardHome.exe: ") + $sig.Status)
         }
         Copy-Item $AdGuardExe $InstallDir -Force
     }
@@ -169,7 +174,7 @@ try {
     if (-not $imagePath) {
         Push-Location $InstallDir
         try { & $exe -s install -l $agLog } finally { Pop-Location }
-        if ($LASTEXITCODE) { throw "サービス登録に失敗しました ($LASTEXITCODE)" }
+        if ($LASTEXITCODE) { throw ((T "サービス登録に失敗しました" "Could not register the service") + " ($LASTEXITCODE)") }
     }
     Set-Service AdGuardHome -StartupType Automatic
     & sc.exe failure AdGuardHome reset= 86400 actions= restart/5000/restart/10000/restart/60000 | Out-Null
@@ -180,20 +185,13 @@ try {
     Copy-Replace (Join-Path $root 'build\AdGuardHomeTray.exe') $TrayDir
     # 管理画面ウィンドウ用の WebView2 SDK（同梱。描画するランタイムは Windows が自動更新する）
     Copy-Replace (Join-Path $root 'lib\webview2\*.dll') $TrayDir
-    # 以前の版が作っていた読み込み先の設定（SDK の自動更新用）は不要になったので消す
-    Remove-Item (Join-Path $TrayDir 'AdGuardHomeTray.exe.config') -Force -ErrorAction SilentlyContinue
     Copy-Item (Join-Path $root 'scripts\manage.ps1') $TrayDir -Force
     Copy-Item (Join-Path $root 'uninstall.ps1') $TrayDir -Force
 
-    # 設定値（自動更新は既定で有効）。旧版が HKLM に保存した自動更新の設定は引き継いでからキーを削除する
-    if ($null -eq (Get-Settings).AutoUpdate) {
-        $old = (Get-ItemProperty $legacyKey -Name AutoUpdate -ErrorAction SilentlyContinue).AutoUpdate
-        Set-Setting AutoUpdate $(if ($null -ne $old) { [int]$old } else { 1 })
-    }
+    # 設定値（自動更新は既定で有効）
+    if ($null -eq (Get-Settings).AutoUpdate) { Set-Setting AutoUpdate 1 }
     Set-Setting InstallDir $InstallDir
     Set-Setting TrayDir $TrayDir
-    [Microsoft.Win32.Registry]::LocalMachine.DeleteSubKeyTree('SOFTWARE\AdGuardHomeTray', $false)
-    if (Test-Path $legacyKey) { throw "旧設定のレジストリ キーを削除できません: $legacyKey" }
 
     # 情報更新 + 自動更新タスク
     $manage = Join-Path $TrayDir 'manage.ps1'
@@ -234,8 +232,6 @@ try {
     $lnk.Save()
     # アプリと同じ ID（AppUserModelID）を付ける。通知の見出しに、このショートカットの名前とアイコンが出る
     Set-ShortcutAppId (Join-Path $programs 'AdGuard Home.lnk') 'AdGuardHomeTray'
-    # 以前の版が作っていたフォルダー（トレイ・管理画面・アンインストールの 3 つ）は消す
-    Remove-Item (Join-Path $programs 'AdGuard Home') -Recurse -Force -ErrorAction SilentlyContinue
 
     # 「設定 → アプリ → インストールされているアプリ」に登録（ここからアンインストールできる）。
     # 書くレジストリはこのアンインストール情報だけで、アンインストール時に削除する
@@ -243,22 +239,19 @@ try {
     New-Item -Path $uninstallKey -Force | Out-Null
     $size = [int]((Get-ChildItem $TrayDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
     $props = @{
-        DisplayName     = 'AdGuard Home（トレイアプリ）'
+        DisplayName     = 'AdGuard Home for Windows'
         DisplayVersion  = (Get-Item $trayExe).VersionInfo.FileVersion
-        Publisher       = 'AdGuard Home Tray (unofficial)'
+        Publisher       = 'AdGuard Home for Windows (unofficial)'
         DisplayIcon     = "$trayExe,0"
         InstallLocation = $TrayDir
         UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $TrayDir 'uninstall.ps1')`""
-        URLInfoAbout    = 'https://github.com/hinatamaxxx/adguard-home-windows-tray'
+        URLInfoAbout    = 'https://github.com/hinatamaxxx/adguard-home-windows'
     }
     foreach ($k in $props.Keys) { Set-ItemProperty $uninstallKey -Name $k -Value $props[$k] }
     Set-ItemProperty $uninstallKey -Name EstimatedSize -Value $size -Type DWord
     Set-ItemProperty $uninstallKey -Name NoModify -Value 1 -Type DWord
     Set-ItemProperty $uninstallKey -Name NoRepair -Value 1 -Type DWord
 
-    # 旧レイアウトの残骸を掃除
-    foreach ($f in 'AdGuardHomeTray.exe', 'manage.ps1', 'uninstall.ps1') { Remove-Item (Join-Path $InstallDir $f) -Force -ErrorAction SilentlyContinue }
-    Remove-Item (Join-Path $InstallDir 'logs') -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host 'INSTALL OK'
 } catch {
     Write-Host ('INSTALL FAILED: ' + $_.Exception.Message + ' @ ' + $_.InvocationInfo.PositionMessage)

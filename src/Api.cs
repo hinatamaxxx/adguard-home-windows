@@ -71,7 +71,7 @@ namespace AdGuardHomeTray
 
         object Send(string method, string path, object body, bool basic)
         {
-            if (string.IsNullOrEmpty(BaseUrl)) throw new ApiException(0, "管理画面のアドレスが見つかりません");
+            if (string.IsNullOrEmpty(BaseUrl)) throw new ApiException(0, L.T("管理画面のアドレスが見つかりません", "Dashboard address not found"));
             var req = (HttpWebRequest)WebRequest.Create(BaseUrl.TrimEnd('/') + "/" + path);
             req.Method = method;
             req.Timeout = 5000;
@@ -218,7 +218,7 @@ namespace AdGuardHomeTray
 
         public LoginForm(string currentUser)
         {
-            Text = "AdGuard Home - ログイン情報";
+            Text = L.T("AdGuard Home - ログイン情報", "AdGuard Home - Login info");
             Font = SystemFonts.MessageBoxFont;
             AutoScaleMode = AutoScaleMode.Font;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -237,24 +237,26 @@ namespace AdGuardHomeTray
 
             var info = new Label
             {
-                Text = "管理画面のユーザー名とパスワードを入力してください。\n" +
-                       "このPCのユーザーだけが復号できる形（Windows DPAPI）で保存します。",
+                Text = L.T("管理画面のユーザー名とパスワードを入力してください。\n" +
+                           "このPCのユーザーだけが復号できる形（Windows DPAPI）で保存します。",
+                           "Enter the dashboard user name and password.\n" +
+                           "They are saved so only your account on this PC can decrypt them (Windows DPAPI)."),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 10)
             };
             table.Controls.Add(info, 0, 0);
             table.SetColumnSpan(info, 2);
 
-            table.Controls.Add(new Label { Text = "ユーザー名", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) }, 0, 1);
+            table.Controls.Add(new Label { Text = L.T("ユーザー名", "User name"), AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) }, 0, 1);
             txtUser = new TextBox { Width = 260, Text = currentUser ?? "" };
             table.Controls.Add(txtUser, 1, 1);
-            table.Controls.Add(new Label { Text = "パスワード", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) }, 0, 2);
+            table.Controls.Add(new Label { Text = L.T("パスワード", "Password"), AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) }, 0, 2);
             txtPass = new TextBox { Width = 260, UseSystemPasswordChar = true };
             table.Controls.Add(txtPass, 1, 2);
 
             var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 0) };
-            var ok = new Button { Text = "保存", DialogResult = DialogResult.OK, AutoSize = true };
-            var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, AutoSize = true };
+            var ok = new Button { Text = L.T("保存", "Save"), DialogResult = DialogResult.OK, AutoSize = true };
+            var cancel = new Button { Text = L.T("キャンセル", "Cancel"), DialogResult = DialogResult.Cancel, AutoSize = true };
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(ok);
             table.Controls.Add(buttons, 0, 3);

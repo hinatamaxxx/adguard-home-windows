@@ -24,14 +24,14 @@ namespace AdGuardHomeTray
             lines.Add("AdGuard Home" + (currentVersion == "" ? "" : " " + currentVersion));
 
             bool running = lastStatus == ServiceControllerStatus.Running;
-            if (lastStatus == null) lines.Add("サービスが登録されていません");
-            else if (!running) lines.Add(lastStatus == ServiceControllerStatus.Stopped ? "停止しています" : StatusText(lastStatus.Value));
-            else if (protectionEnabled == false) lines.Add("保護は無効です");
-            else lines.Add("保護は有効です");
+            if (lastStatus == null) lines.Add(L.T("サービスが登録されていません", "The service is not installed"));
+            else if (!running) lines.Add(lastStatus == ServiceControllerStatus.Stopped ? L.T("停止しています", "Stopped") : StatusText(lastStatus.Value));
+            else if (protectionEnabled == false) lines.Add(L.T("保護は無効です", "Protection is off"));
+            else lines.Add(L.T("保護は有効です", "Protection is on"));
 
             string pending = PendingUpdateText();   // 自動更新オフで新しい版があるときだけ
             if (pending != null) lines.Add(pending);
-            if (running && filtersUpdatedUtc.HasValue) lines.Add("フィルタは" + Ago(filtersUpdatedUtc.Value) + "に更新されました");
+            if (running && filtersUpdatedUtc.HasValue) lines.Add(L.T("フィルタは" + Ago(filtersUpdatedUtc.Value) + "に更新されました", "Filters: " + Ago(filtersUpdatedUtc.Value)));
 
             // 63 文字に収まるまで、後ろの行から省く
             string text = string.Join("\n", lines.ToArray());
@@ -46,10 +46,16 @@ namespace AdGuardHomeTray
         static string Ago(DateTime utc)
         {
             var d = DateTime.UtcNow - utc;
-            if (d.TotalMinutes < 1) return "たった今";
-            if (d.TotalHours < 1) return (int)d.TotalMinutes + " 分前";
-            if (d.TotalDays < 1) return (int)d.TotalHours + " 時間前";
-            return (int)d.TotalDays + " 日前";
+            if (d.TotalMinutes < 1) return L.T("たった今", "just now");
+            if (d.TotalHours < 1) return Count((int)d.TotalMinutes, " 分前", "minute") ;
+            if (d.TotalDays < 1) return Count((int)d.TotalHours, " 時間前", "hour");
+            return Count((int)d.TotalDays, " 日前", "day");
+        }
+
+        // 「3 分前」/「3 minutes ago」
+        static string Count(int n, string jaSuffix, string enUnit)
+        {
+            return L.Ja ? n + jaSuffix : n + " " + enUnit + (n == 1 ? "" : "s") + " ago";
         }
 
         void UpdateTooltip()

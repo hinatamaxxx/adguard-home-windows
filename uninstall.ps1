@@ -4,9 +4,12 @@
 # 削除するものの一覧は README を参照。
 #   -Quiet        確認画面を出さずに実行（既定どおりすべて削除。-KeepSettings と併用可）
 #   -KeepSettings 設定とデータを残す
-param([switch]$KeepSettings, [switch]$Quiet, [switch]$Purge)   # -Purge は旧版との互換用（既定と同じ）
+param([switch]$KeepSettings, [switch]$Quiet)
 
 $ErrorActionPreference = 'Continue'
+# 表示の言語（Windows の表示言語が日本語なら日本語、それ以外は英語）
+$ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja'
+function T([string]$jaText, [string]$enText) { if ($ja) { $jaText } else { $enText } }
 
 # 管理者でなければ、同じ引数で昇格して起動し直す
 $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
@@ -78,29 +81,20 @@ if (Get-Service AdGuardHome -ErrorAction SilentlyContinue) {
     Pop-Location
 }
 foreach ($t in 'AdGuardHome AutoUpdate', 'AdGuardHome UpdateNow') { Unregister-ScheduledTask -TaskName $t -Confirm:$false -ErrorAction SilentlyContinue }
-# 旧版が使っていたレジストリ（現行版は作らないが、残っていれば消す）
-Remove-Item 'HKLM:\SOFTWARE\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item 'HKCU:\Software\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\AdGuard Home') -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\AdGuard Home.lnk') -Force -ErrorAction SilentlyContinue
 # 「インストールされているアプリ」の登録（このアプリが書く唯一のレジストリ）
 Remove-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue
 # 自動起動のショートカット。StartupApproved\StartupFolder の値は Windows が管理するので消さない
-foreach ($name in 'AdGuard Home.lnk', 'AdGuard Home Tray.lnk') {   # 後者は 1.5.0 までの名前
-    Remove-Item (Join-Path ([Environment]::GetFolderPath('Startup')) $name) -Force -ErrorAction SilentlyContinue
-}
-# 旧版の Run 方式の登録（残っていれば消す）
-Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name AdGuardHomeTray -ErrorAction SilentlyContinue
-Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run' -Name AdGuardHomeTray -ErrorAction SilentlyContinue
+Remove-Item (Join-Path ([Environment]::GetFolderPath('Startup')) 'AdGuard Home.lnk') -Force -ErrorAction SilentlyContinue
 Remove-Item $dataDir -Recurse -Force -ErrorAction SilentlyContinue
 
 $credDir = Join-Path $env:APPDATA 'AdGuardHomeTray'
 $webDir = Join-Path $env:LOCALAPPDATA 'AdGuardHomeTray'   # 管理画面ウィンドウ（WebView2）のデータ・ウィンドウ位置
 if ($KeepSettings) {
     Remove-Item (Join-Path $dir 'AdGuardHome.exe') -Force -ErrorAction SilentlyContinue
-    Write-Host "設定とデータは残しました: $dir"
-    if (Test-Path $credDir) { Write-Host "トレイのログイン情報は残しました: $credDir" }
-    if (Test-Path $webDir) { Write-Host "管理画面ウィンドウのデータは残しました: $webDir" }
+    Write-Host ((T "設定とデータは残しました: " "Settings and data were kept: ") + $dir)
+    if (Test-Path $credDir) { Write-Host ((T "トレイのログイン情報は残しました: " "The tray login info was kept: ") + $credDir) }
+    if (Test-Path $webDir) { Write-Host ((T "管理画面ウィンドウのデータは残しました: " "The dashboard window data was kept: ") + $webDir) }
 } else {
     Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item $credDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -108,4 +102,4 @@ if ($KeepSettings) {
 }
 # 実行中のスクリプト自身を含むため、トレイフォルダーは最後に削除
 Remove-Item $trayDir -Recurse -Force -ErrorAction SilentlyContinue
-Write-Host 'アンインストールが完了しました。'
+Write-Host (T 'アンインストールが完了しました。' 'Uninstall complete.')

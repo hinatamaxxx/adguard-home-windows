@@ -29,7 +29,8 @@ namespace AdGuardHomeTray
             SetHover(miExit, delegate
             {
                 return CanExit ? null
-                    : "AdGuard Home の実行中は終了できません。\n「保護とサービス」→「AdGuard Home を停止」で止めると、終了できるようになります。";
+                    : L.T("AdGuard Home の実行中は終了できません。\n「保護とサービス」→「AdGuard Home を停止」で止めると、終了できるようになります。",
+                          "You can't exit while AdGuard Home is running.\nStop it under Protection and service > Stop AdGuard Home first.");
             });
 
             hoverTimer = new System.Windows.Forms.Timer { Interval = 450 };
@@ -129,7 +130,7 @@ namespace AdGuardHomeTray
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
-            Font = new Font("Yu Gothic UI", 9f);
+            Font = new Font(L.UiFont, 9f);
             BackColor = dark ? Color.FromArgb(0x2B, 0x2B, 0x2B) : Color.FromArgb(0xF9, 0xF9, 0xF9);
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
         }

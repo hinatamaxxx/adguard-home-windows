@@ -1,6 +1,6 @@
 # 導入手順（AI エージェント向け）
 
-このリポジトリは、Windows で AdGuard Home をサービスとして動かし、通知領域のトレイアプリで管理するためのものです。ユーザーから「このリポジトリを導入して」と頼まれたら、この手順に従ってください。基本の導入（1）のあと、家のほかの機器（2）や外出先の iPhone / iPad（3）でも使いたいかを確かめ、望んだものだけ進めてください。ユーザーへの説明はユーザーの言語で、専門用語を避けて行ってください。
+このリポジトリは Windows で AdGuard Home をサービスとして動かし、通知領域のトレイアプリで管理するためのものです。ユーザーから「このリポジトリを導入して」と頼まれたら、この手順に従ってください。基本の導入（1）のあと、家のほかの機器（2）や外出先の iPhone / iPad（3）でも使いたいかを確かめ、望んだものだけ進めてください。ユーザーへの説明はユーザーの言語で、専門用語を避けて行ってください。
 
 ## 守ること
 
@@ -15,8 +15,8 @@
 ## 1. 基本の導入（この PC で使う）
 
 1. 前提を確認する: Windows 10/11 x64、`%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe` があること（.NET Framework 4.8。通常は標準で入っている）。
-2. リポジトリを取得する（`git clone <URL>`、または ZIP をダウンロードして展開）。取得とセットアップ画面の起動をまとめて行う場合は、PowerShell で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows-tray/main/get.ps1 | iex`（最新リリースの ZIP を SHA-256 で照合してからセットアップ画面を開く。この場合 3 は不要）。
-3. `Setup.cmd` を実行する（初回は自動でビルドしてからセットアップ画面を開く）。ユーザーに次を伝える:
+2. リポジトリを取得する（`git clone <URL>`、または ZIP をダウンロードして展開）。取得とセットアップ画面の起動をまとめて行う場合は、PowerShell で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex`（最新リリースの ZIP を SHA-256 で照合してからセットアップ画面を開く。この場合 3 は不要）。
+3. `Setup.cmd` を実行する（初回は自動でビルドしてからセットアップ画面を開く）。ユーザーに次のことを伝える。
    - セットアップ画面で「インストール」を押す
    - 「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を押す
    - 画面なしで入れる場合は `build.ps1` のあと、`install.ps1` を管理者で実行してもよい（`Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "<repo>\install.ps1"'`）
@@ -32,7 +32,7 @@
 
 ## 2. 家のほかの機器で使う（任意）
 
-1. ファイアウォールで受信を許可する（管理者の PowerShell。ユーザーに実行してもらう）:
+1. ファイアウォールで受信を許可する（管理者の PowerShell。ユーザーに実行してもらう）。
    ```powershell
    New-NetFirewallRule -DisplayName "AdGuard Home DNS" -Direction Inbound -Program "C:\Program Files\AdGuardHome\AdGuardHome.exe" -Protocol UDP -LocalPort 53 -Action Allow -Profile Private,Public
    New-NetFirewallRule -DisplayName "AdGuard Home DNS (TCP)" -Direction Inbound -Program "C:\Program Files\AdGuardHome\AdGuardHome.exe" -Protocol TCP -LocalPort 53 -Action Allow -Profile Private,Public
@@ -64,7 +64,7 @@
 
 ## 更新
 
-導入後は、AdGuard Home 本体とトレイアプリの両方が毎日自動で更新される（SYSTEM のタスク。UAC なし、既定でオン）。手動で更新したいときは、トレイの右クリック →「アップデート」→「今すぐ確認して更新」。古い版（1.6.0 以前）から更新するときだけは、新しい版の `Setup.cmd` を一度実行する。
+導入後は、AdGuard Home 本体とトレイアプリの両方が毎日自動で更新される（SYSTEM のタスク。UAC なし、既定でオン）。手動で更新したいときは、トレイの右クリック →「アップデート」→「今すぐ確認して更新」。
 
 ## アンインストール
 

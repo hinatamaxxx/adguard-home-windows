@@ -61,3 +61,12 @@ if ($LASTEXITCODE) { throw "csc failed ($LASTEXITCODE)" }
 # WebView2 の部品（管理画面ウィンドウ用）を exe の隣に置く
 Copy-Item (Join-Path $root 'lib\webview2\*.dll') $out -Force
 Write-Host "Built: $exe"
+
+# インストーラーの入口（AdGuardHomeSetup.exe）。最新のリリースを取得してセットアップ画面を開くだけの小さな exe
+if (-not $Screenshot) {
+    $setupExe = Join-Path $out 'AdGuardHomeSetup.exe'
+    $setupRefs = '/r:System.dll', '/r:System.Drawing.dll', '/r:System.Windows.Forms.dll', '/r:System.Web.Extensions.dll', '/r:System.IO.Compression.dll', '/r:System.IO.Compression.FileSystem.dll', $manifest
+    & $csc /nologo /target:winexe /optimize+ "/win32icon:$ico" "/out:$setupExe" @setupRefs (Join-Path $root 'setup\Bootstrapper.cs')
+    if ($LASTEXITCODE) { throw "csc failed for AdGuardHomeSetup.exe ($LASTEXITCODE)" }
+    Write-Host "Built: $setupExe"
+}

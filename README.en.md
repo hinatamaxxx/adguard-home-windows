@@ -8,7 +8,7 @@ This setup kit runs the official [AdGuard Home](https://github.com/AdguardTeam/A
 
 **Use one PowerShell command**
 
-Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. When Windows asks "Do you want to allow this app to make changes to your device?", choose **Yes**. The command runs [get.ps1](get.ps1), which downloads the latest release, checks its SHA-256, installs it without any windows, sets it to start when you sign in, and starts the tray app.
+Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. When Windows asks "Do you want to allow this app to make changes to your device?", choose **Yes**. The command runs [get.ps1](get.ps1), which downloads the latest release, checks its SHA-256, installs it while showing its progress in the console, and sets it to start when you sign in. When it finishes, a window appears. Leave **Start AdGuard Home and open the initial setup** checked (the default) and click **Finish** to open the initial setup page.
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -137,7 +137,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.8.4 (up to date)
+  This app v1.8.5 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)
@@ -146,7 +146,7 @@ Updates ▸
 - **Update automatically (on by default)**: a task runs as SYSTEM every day, at startup, and at sign-in. It updates AdGuard Home with the official updater. It updates this app with the latest version from GitHub Releases. There is no UAC prompt. Successful updates do not show a notification; check the versions in the menu. You get a notification only after two failures in a row
 - **Check and update now**: runs the same update process right away, without a UAC prompt, and tells you the result
 - Only when automatic updates are off, the app tells you about new versions and turns the icon orange. Click the notification to update
-- Before updating this app, the updater checks `AdGuardHomeTray.zip` against `AdGuardHomeTray.zip.sha256` from the same release in this repository. It then replaces the files. The tray app keeps running. When it detects the new version, it restarts itself after you close any open window, such as the dashboard
+- Before updating this app, the updater checks `adguard-home-windows.zip` against `adguard-home-windows.zip.sha256` from the same release in this repository. It then replaces the files. The tray app keeps running. When it detects the new version, it restarts itself after you close any open window, such as the dashboard
 - The log is in `C:\ProgramData\AdGuardHome\logs\manage.log`
 
 ## Icons
@@ -162,11 +162,11 @@ The app uses Japanese if your Windows display language is Japanese. Otherwise, i
 
 ## Files
 
-- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It downloads the latest release ZIP, checks its SHA-256, and installs it without any windows
+- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It downloads the latest release ZIP, checks its SHA-256, installs it while showing its progress, and then shows a completion window
 - `src/AdGuardHomeTray.cs`: the tray app, built with the .NET Framework 4.x `csc.exe`
 - `src/L10n.cs`: display language (Japanese and English)
 - `src/DashboardForm.cs`: the separate dashboard window (WebView2) / `src/Theme.cs`: light and dark themes
-- `src/DialogKit.cs`: shared dialog parts in the Windows 11 style / `src/UninstallDialog.cs`, `src/ExitDialog.cs`, `src/StopDialog.cs`: the uninstall, exit, and stop windows
+- `src/DialogKit.cs`: shared dialog parts in the Windows 11 style / `src/StepsDialogs.cs`, `src/ExitDialog.cs`, `src/StopDialog.cs`: the install/uninstall progress, exit, and stop windows
 - `src/TrayContext.MenuHover.cs`: descriptions that appear when you hover over menu items
 - `src/TrayContext.Update.cs`: shows versions, runs updates now, reports automatic update failures, and restarts the app after an update
 - `src/TrayContext.SubmenuUp.cs`: opens submenus upward from the parent item

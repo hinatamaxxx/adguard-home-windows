@@ -128,6 +128,11 @@ namespace AdGuardHomeTray
             st.AreBrowserAcceleratorKeysEnabled = false; // Ctrl+P（印刷）、Ctrl+F（検索）などを無効に
             // ページの配色（AdGuard Home のテーマ「自動」）を Windows のモードに合わせる
             core.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Auto;
+            // AdGuard Home の初期設定画面とログイン画面は、ブラウザーに保存したテーマ（account_theme）を使い、
+            // 保存がなければライトにする。開くたびにその時点の判定結果で上書きするので、ページのスクリプトより先に
+            // 毎回「自動」を入れ、Windows のライト/ダークに合わせる（ログイン後の画面は AdGuard Home の設定に従う）
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                "try { localStorage.setItem('account_theme', JSON.stringify('auto')); } catch (e) { }");
 
             // 右クリックメニューは、文字入力・選択時のコピー/切り取り/貼り付け/すべて選択だけにする
             core.ContextMenuRequested += delegate(object s, CoreWebView2ContextMenuRequestedEventArgs e)

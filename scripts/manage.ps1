@@ -187,9 +187,9 @@ function Invoke-TrayUpdate {
     if ($vl -le $vc) { return 2 }
 
     $prefix = "https://github.com/$trayRepo/releases/download/"
-    $zipAsset = $rel.assets | Where-Object { $_.name -eq 'AdGuardHomeTray.zip' } | Select-Object -First 1
-    $sumAsset = $rel.assets | Where-Object { $_.name -eq 'AdGuardHomeTray.zip.sha256' } | Select-Object -First 1
-    if (-not $zipAsset -or -not $sumAsset) { throw 'tray: release has no AdGuardHomeTray.zip / .sha256' }
+    $zipAsset = $rel.assets | Where-Object { $_.name -eq 'adguard-home-windows.zip' } | Select-Object -First 1
+    $sumAsset = $rel.assets | Where-Object { $_.name -eq 'adguard-home-windows.zip.sha256' } | Select-Object -First 1
+    if (-not $zipAsset -or -not $sumAsset) { throw 'tray: release has no adguard-home-windows.zip / .sha256' }
     foreach ($a in $zipAsset, $sumAsset) {
         if (-not $a.browser_download_url.StartsWith($prefix)) { throw "tray: unexpected download URL $($a.browser_download_url)" }
     }
@@ -197,7 +197,7 @@ function Invoke-TrayUpdate {
     $work = Join-Path $env:ProgramData ('AdGuardHome\update\' + [guid]::NewGuid())
     New-Item -ItemType Directory -Force $work | Out-Null
     try {
-        $zip = Join-Path $work 'AdGuardHomeTray.zip'
+        $zip = Join-Path $work 'adguard-home-windows.zip'
         Invoke-WebRequest $zipAsset.browser_download_url -OutFile $zip -UseBasicParsing -TimeoutSec 300
         $sum = (Invoke-WebRequest $sumAsset.browser_download_url -UseBasicParsing -TimeoutSec 60).Content
         if ($sum -is [byte[]]) { $sum = [Text.Encoding]::ASCII.GetString($sum) }
@@ -208,7 +208,7 @@ function Invoke-TrayUpdate {
         # Expand-Archive は、言語の表示用データが欠けた Windows（Windows Sandbox など）で読み込めないことがあるので、.NET で展開する
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
-        $pkg = Join-Path $work 'x\AdGuardHomeTray'
+        $pkg = Join-Path $work 'x\adguard-home-windows'
         $newExe = Join-Path $pkg 'build\AdGuardHomeTray.exe'
         if (-not (Test-Path $newExe) -or -not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw 'tray: unexpected package layout' }
         if ((Get-Ver (Get-Item $newExe).VersionInfo.FileVersion) -ne $vl) { throw 'tray: package version does not match the release' }

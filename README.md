@@ -144,6 +144,7 @@ AdGuard Home はこの PC で動くので、**PC がスリープ・電源オフ�
 - `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風。角丸ボタン・ボタン帯・ライト/ダーク） / `src/SetupDialog.cs`・`src/UninstallDialog.cs`・`src/ExitDialog.cs`: セットアップ・アンインストール・終了の画面
 - `src/TrayContext.MenuHover.cs`: メニュー項目にマウスを乗せたときの説明表示
 - `src/TrayContext.Update.cs`: 版の表示・今すぐ更新・自動更新の失敗通知・更新後の自動再起動
+- `src/TrayContext.SubmenuUp.cs`: 子メニューを親の項目より上に向かって開く
 - `lib/webview2/`: WebView2 SDK（Microsoft.Web.WebView2 1.0.4258.31、nuget.org。Microsoft の署名を確認済み）
 - `build.ps1`: ビルド（`build\AdGuardHomeTray.exe` を生成）
 - `scripts/manage.ps1`: サービス操作・更新（管理者で実行）

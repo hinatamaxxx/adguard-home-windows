@@ -8,7 +8,8 @@ param([switch]$KeepSettings, [switch]$Quiet)
 
 $ErrorActionPreference = 'Continue'
 # 表示の言語（Windows の表示言語が日本語なら日本語、それ以外は英語）
-$ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja'
+# Windows の表示言語（PowerShell 自体の設定に左右されないよう、OS に直接たずねる）
+try { $ja = (((Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern ushort GetUserDefaultUILanguage();' -Name UiLanguage -Namespace AdGuardHomeSetup -PassThru)::GetUserDefaultUILanguage()) -band 0x3FF) -eq 0x11 } catch { $ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja' }
 function T([string]$jaText, [string]$enText) { if ($ja) { $jaText } else { $enText } }
 
 # 管理者でなければ、同じ引数で昇格して起動し直す

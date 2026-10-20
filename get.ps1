@@ -7,7 +7,8 @@
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'   # 進捗表示があると Windows PowerShell のダウンロードが極端に遅くなる
     $repo = 'hinatamaxxx/adguard-home-windows'
-    $ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja'   # 表示の言語
+    # Windows の表示言語（PowerShell 自体の設定に左右されないよう、OS に直接たずねる）
+    try { $ja = (((Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern ushort GetUserDefaultUILanguage();' -Name UiLanguage -Namespace AdGuardHomeSetup -PassThru)::GetUserDefaultUILanguage()) -band 0x3FF) -eq 0x11 } catch { $ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja' }
     function T([string]$jaText, [string]$enText) { if ($ja) { $jaText } else { $enText } }
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 

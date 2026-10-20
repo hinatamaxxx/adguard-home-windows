@@ -40,13 +40,11 @@ jobs:
           New-Item -ItemType Directory -Force "dist/$pkg/build" | Out-Null
           Copy-Item build/AdGuardHomeTray.exe, build/*.dll "dist/$pkg/build/"
           Copy-Item Setup.cmd, install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
-          Copy-Item scripts, lib, src, setup -Destination "dist/$pkg/" -Recurse
+          Copy-Item scripts, lib, src -Destination "dist/$pkg/" -Recurse
           Compress-Archive -Path "dist/$pkg" -DestinationPath "dist/$pkg.zip" -Force
           # 自己更新（manage.ps1）が照合する SHA-256
           $hash = (Get-FileHash "dist/$pkg.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
           [IO.File]::WriteAllText("dist/$pkg.zip.sha256", "$hash  $pkg.zip`n")
-          # インストーラーの入口（毎回最新のリリースを取得してセットアップ画面を開く）
-          Copy-Item build/AdGuardHomeSetup.exe dist/
 
       - uses: actions/upload-artifact@v7
         with:
@@ -54,11 +52,10 @@ jobs:
           path: |
             dist/AdGuardHomeTray.zip
             dist/AdGuardHomeTray.zip.sha256
-            dist/AdGuardHomeSetup.exe
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/AdGuardHomeSetup.exe dist/AdGuardHomeTray.zip dist/AdGuardHomeTray.zip.sha256 --title "${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: gh release create "${{ github.ref_name }}" dist/AdGuardHomeTray.zip dist/AdGuardHomeTray.zip.sha256 --title "${{ github.ref_name }}" --notes-file .github/release-notes.md

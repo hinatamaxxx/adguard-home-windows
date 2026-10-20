@@ -217,8 +217,6 @@ try {
         Grant-TaskRun 'AdGuardHome UpdateNow'
     }
 
-    # 初回の情報記録
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $manage -Action Refresh
 
     # スタートメニュー: 「AdGuard Home」1 つだけ（管理画面を開く。トレイが動いていなければ起動してから開く）
     $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
@@ -251,6 +249,9 @@ try {
     Set-ItemProperty $uninstallKey -Name EstimatedSize -Value $size -Type DWord
     Set-ItemProperty $uninstallKey -Name NoModify -Value 1 -Type DWord
     Set-ItemProperty $uninstallKey -Name NoRepair -Value 1 -Type DWord
+
+    # 初回の情報記録。手元の AdGuard Home からロゴを取れたら、スタートメニューと上の登録のアイコンもそのロゴにする
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $manage -Action Refresh
 
     Write-Host 'INSTALL OK'
 } catch {

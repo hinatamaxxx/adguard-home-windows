@@ -6,15 +6,9 @@
 
 ## かんたん導入
 
-**インストーラーで入れる（いちばん簡単）**
+**コマンド 1 行で入れる（いちばん簡単）**
 
-[AdGuardHomeSetup.exe](https://github.com/hinatamaxxx/adguard-home-windows/releases/latest/download/AdGuardHomeSetup.exe) をダウンロードして実行します。毎回ネットから最新版を取得し、SHA-256 を照合してからセットアップ画面を開きます。「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選んでください。
-
-> 署名のないアプリなので、初回は「Windows によって PC が保護されました」と表示されることがあります。その場合は「詳細情報」→「実行」を選んでください。
-
-**コマンド 1 行で入れる**
-
-PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。中身は [get.ps1](get.ps1) で、インストーラーと同じことをします。
+PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。最新のリリースをダウンロードして SHA-256 を照合し、セットアップ画面を開きます（中身は [get.ps1](get.ps1)）。「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選んでください。
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -160,14 +154,20 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 - このアプリの更新ではこのリポジトリのリリースにある `AdGuardHomeTray.zip` を、同じリリースの `AdGuardHomeTray.zip.sha256` と照合してから入れ替えます。動いているトレイは止めず、新しいバージョンに入れ替わったことに気づくと自分で再起動します（管理画面などを開いているときは、閉じてから）
 - 記録は `C:\ProgramData\AdGuardHome\logs\manage.log` にあります
 
+## アイコン
+
+AdGuard のロゴは AdGuard 社の商標なので、配布物（このリポジトリとリリースの ZIP）には入れていません。そのため exe に入っているアイコンは、独自に描いた盾です。インストールしたあとは、手元の AdGuard Home の管理画面からロゴを取得し、次のアイコンに使います。
+
+- 通知領域のアイコン（トレイアプリが実行中に描く）
+- スタートメニューの「AdGuard Home」と、「インストールされているアプリ」の一覧のアイコン（`manage.ps1` がトレイアプリに `C:\ProgramData\AdGuardHome\AdGuardHome-<印>.ico` を描かせ、ショートカットと登録をそれに向ける。ロゴを取得したときと、更新のたびに作り直す）
+
 ## 表示の言語
 
 Windows の表示言語が日本語なら日本語、それ以外なら英語で表示します。確認のために言語を指定したいときは、環境変数 `ADGUARD_TRAY_LANG` に `ja` か `en` を設定してからトレイアプリを起動します。
 
 ## ファイル
 
-- `setup/Bootstrapper.cs`: インストーラー `AdGuardHomeSetup.exe`（最新のリリースを取得し、SHA-256 を照合してセットアップ画面を開く）
-- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。インストーラーと同じことをする
+- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。最新のリリースの ZIP を SHA-256 で照合し、セットアップ画面を開く
 - `src/AdGuardHomeTray.cs`: トレイアプリ（.NET Framework 4.x の `csc.exe` でビルド）
 - `src/L10n.cs`: 表示の言語（日本語・英語）
 - `src/DashboardForm.cs`: 管理画面の専用ウィンドウ（WebView2） / `src/Theme.cs`: ライト/ダーク対応
@@ -176,7 +176,7 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 - `src/TrayContext.Update.cs`: バージョンの表示、今すぐ更新、自動更新の失敗の通知、更新後の自動再起動
 - `src/TrayContext.SubmenuUp.cs`: 子メニューを親の項目より上に向かって開く
 - `lib/webview2/`: WebView2 SDK（Microsoft.Web.WebView2 1.0.4258.31、nuget.org。Microsoft の署名を確認済み）
-- `build.ps1`: ビルド（`build\AdGuardHomeTray.exe` と `build\AdGuardHomeSetup.exe` を作る）
+- `build.ps1`: ビルド（`build\AdGuardHomeTray.exe` を作る）
 - `scripts/manage.ps1`: サービスの操作と更新（管理者・SYSTEM で実行）
 - `scripts/configure-adguard.ps1`: AdGuard Home の設定変更（`-EnableFunnelDoH` で Funnel 経由の DoH を受ける、`-Faster` で速くする。確かめてから反映し、バックアップも取る）
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: iOS 用の DNS プロファイルの作成 / 端末名の登録
@@ -205,7 +205,7 @@ Windows の「スタートアップ」でオン/オフを切り替えると、Wi
 | `C:\Program Files\AdGuardHome\AdGuardHome.exe` | AdGuard Home 本体 | 削除 |
 | `C:\Program Files\AdGuardHome\AdGuardHome.yaml`、`data\` | AdGuard Home の設定とデータ（本体が作る） | 削除（「設定とデータを残す」を選んだときは残す） |
 | `C:\Program Files\AdGuardHome Tray\` | トレイアプリ、`manage.ps1`、`uninstall.ps1` | 削除 |
-| `C:\ProgramData\AdGuardHome\`（`settings.json`、`logs\`、更新中だけ置く `maintenance.json`） | 共有設定・ログ | 削除 |
+| `C:\ProgramData\AdGuardHome\`（`settings.json`、`logs\`、取得したロゴ `logo.svg`・`logo.png` とアイコン `AdGuardHome-*.ico`、更新中だけ置く `maintenance.json`） | 共有設定・ログ・ロゴ | 削除 |
 | `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\AdGuard Home.lnk` | スタートメニューの「AdGuard Home」（管理画面を開く） | 削除 |
 | タスク スケジューラの `AdGuardHome AutoUpdate`、`AdGuardHome UpdateNow` | 情報の記録・自動更新・今すぐ更新 | 削除 |
 | `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AdGuard Home.lnk` | ログオン時の自動起動（オンにしたときだけ） | 削除 |

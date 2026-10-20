@@ -109,7 +109,36 @@ function Save-Info {
         }
     }
     Set-Setting WebUrl $url
-    Save-Logo $url}
+    Save-Logo $url
+    try { Update-AppIcon } catch { Log ('icon: ' + $_.Exception.Message) }
+}
+
+# スタートメニューと「インストールされているアプリ」のアイコン。AdGuard のロゴは配布物に入れず、
+# 手元の AdGuard Home から取得したロゴ（Save-Logo）でトレイアプリに .ico を描かせて使う。
+# ファイル名にロゴと exe の更新日時から作った印を付け、Windows のアイコンキャッシュに古い絵が残らないようにする
+function Update-AppIcon {
+    $trayDir = (Get-Settings).TrayDir
+    if (-not $trayDir) { return }
+    $trayExe = Join-Path $trayDir 'AdGuardHomeTray.exe'
+    $dir = Join-Path $env:ProgramData 'AdGuardHome'
+    $svg = Join-Path $dir 'logo.svg'
+    if (-not (Test-Path $trayExe) -or -not (Test-Path $svg)) { return }   # ロゴがなければ exe の中のアイコンのまま
+    $mark = '{0:x}' -f ((Get-Item $svg).LastWriteTimeUtc.Ticks -bxor (Get-Item $trayExe).LastWriteTimeUtc.Ticks)
+    $ico = Join-Path $dir "AdGuardHome-$mark.ico"
+    if (-not (Test-Path $ico)) {
+        $p = Start-Process $trayExe -ArgumentList "--write-icon `"$ico`"" -Wait -PassThru
+        if ($p.ExitCode -ne 0 -or -not (Test-Path $ico)) { Log "icon: could not write ($($p.ExitCode))"; return }
+        Log "icon written: $ico"
+    }
+    $lnk = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\AdGuard Home.lnk'
+    if (Test-Path $lnk) {
+        $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+        if ($shortcut.IconLocation -ne "$ico,0") { $shortcut.IconLocation = "$ico,0"; $shortcut.Save() }   # アプリの ID は残る
+    }
+    $key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AdGuardHomeTray'
+    if (Test-Path $key) { Set-ItemProperty $key -Name DisplayIcon -Value "$ico,0" }
+    Get-ChildItem $dir -Filter 'AdGuardHome-*.ico' | Where-Object { $_.FullName -ne $ico } | Remove-Item -Force -ErrorAction SilentlyContinue
+}
 
 # AdGuard Home 本体の更新。0=更新した, 2=最新
 function Invoke-AghUpdate {

@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.0.0")]
-[assembly: AssemblyFileVersion("1.8.0.0")]
+[assembly: AssemblyVersion("1.8.1.0")]
+[assembly: AssemblyFileVersion("1.8.1.0")]
 
 namespace AdGuardHomeTray
 {
@@ -54,6 +54,10 @@ namespace AdGuardHomeTray
                 Application.SetCompatibleTextRenderingDefault(false);
                 return SetupDialog.Run();
             }
+            // アイコンファイル（.ico）を書き出して終了する（manage.ps1 から呼ばれる）。手元の AdGuard Home から取得した
+            // ロゴで描くので、スタートメニューや「インストールされているアプリ」に本物のロゴを、配布物に入れずに出せる
+            int ii = Array.FindIndex(args, a => string.Equals(a, "--write-icon", StringComparison.OrdinalIgnoreCase));
+            if (ii >= 0 && ii + 1 < args.Length) return TrayContext.WriteIconFile(args[ii + 1]);
             bool dashboard = Array.Exists(args, a => string.Equals(a, "--dashboard", StringComparison.OrdinalIgnoreCase));
             // 自分自身の再起動（--wait-pid <旧プロセス>）: 旧プロセスの終了を待ってから起動する
             int wi = Array.FindIndex(args, a => string.Equals(a, "--wait-pid", StringComparison.OrdinalIgnoreCase));
@@ -1104,6 +1108,36 @@ namespace AdGuardHomeTray
         static readonly string LogoFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"AdGuardHome\logo.png");
         static Bitmap logo;
         static DateTime logoStamp = DateTime.MinValue;
+
+        // 通常の状態のアイコンを、複数の大きさ（PNG 形式）を入れた .ico に書き出す。0=書き出した, 1=失敗
+        internal static int WriteIconFile(string path)
+        {
+            try
+            {
+                int[] sizes = { 16, 24, 32, 48, 64, 256 };
+                var pngs = new List<byte[]>();
+                foreach (int s in sizes)
+                    using (var bmp = RenderIcon(s, 0))
+                    using (var ms = new MemoryStream()) { bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png); pngs.Add(ms.ToArray()); }
+                string tmp = path + ".tmp";
+                using (var w = new BinaryWriter(File.Create(tmp)))
+                {
+                    w.Write((ushort)0); w.Write((ushort)1); w.Write((ushort)sizes.Length);
+                    int offset = 6 + 16 * sizes.Length;
+                    for (int i = 0; i < sizes.Length; i++)
+                    {
+                        w.Write((byte)(sizes[i] % 256)); w.Write((byte)(sizes[i] % 256)); w.Write((byte)0); w.Write((byte)0);
+                        w.Write((ushort)1); w.Write((ushort)32); w.Write(pngs[i].Length); w.Write(offset);
+                        offset += pngs[i].Length;
+                    }
+                    foreach (var d in pngs) w.Write(d);
+                }
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmp, path);
+                return 0;
+            }
+            catch { return 1; }
+        }
 
         // ロゴ画像が現れた・変わったら true（アイコンを作り直すため）
         static bool RefreshLogo()

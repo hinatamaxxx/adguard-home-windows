@@ -36,8 +36,63 @@ function Set-Setting([string]$name, $value) {
     Move-Item $tmp $settingsFile -Force
 }
 
+# ショートカットに AppUserModelID（System.AppUserModel.ID）を付ける
+function Set-ShortcutAppId([string]$path, [string]$appId) {
+    if (-not ('LnkAppId' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class LnkAppId
+{
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")] class ShellLink { }
+
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("0000010b-0000-0000-C000-000000000046")]
+    interface IPersistFile
+    {
+        void GetClassID(out Guid clsid);
+        [PreserveSig] int IsDirty();
+        void Load([MarshalAs(UnmanagedType.LPWStr)] string file, uint mode);
+        void Save([MarshalAs(UnmanagedType.LPWStr)] string file, bool remember);
+        void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string file);
+        void GetCurFile([MarshalAs(UnmanagedType.LPWStr)] out string file);
+    }
+
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")]
+    interface IPropertyStore
+    {
+        void GetCount(out uint count);
+        void GetAt(uint index, out PropertyKey key);
+        void GetValue(ref PropertyKey key, out PropVariant value);
+        void SetValue(ref PropertyKey key, ref PropVariant value);
+        void Commit();
+    }
+
+    [StructLayout(LayoutKind.Sequential)] struct PropertyKey { public Guid fmtid; public uint pid; }
+    [StructLayout(LayoutKind.Explicit)] struct PropVariant { [FieldOffset(0)] public ushort vt; [FieldOffset(8)] public IntPtr p; }
+
+    public static void Set(string path, string appId)
+    {
+        var link = new ShellLink();
+        ((IPersistFile)link).Load(path, 2);   // STGM_READWRITE
+        var key = new PropertyKey { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 };
+        var value = new PropVariant { vt = 31, p = Marshal.StringToCoTaskMemUni(appId) };   // VT_LPWSTR
+        try
+        {
+            var store = (IPropertyStore)link;
+            store.SetValue(ref key, ref value);
+            store.Commit();
+            ((IPersistFile)link).Save(path, true);
+        }
+        finally { Marshal.FreeCoTaskMem(value.p); }
+    }
+}
+'@
+    }
+    [LnkAppId]::Set($path, $appId)
+}
+
 try {
-    $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal =[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         throw '管理者権限で実行してください。'
     }
@@ -142,6 +197,8 @@ try {
     $lnk.WorkingDirectory = $TrayDir
     $lnk.Description = 'AdGuard Home の管理画面を開く'
     $lnk.Save()
+    # アプリと同じ ID（AppUserModelID）を付ける。通知の見出しに、このショートカットの名前とアイコンが出る
+    Set-ShortcutAppId (Join-Path $programs 'AdGuard Home.lnk') 'AdGuardHomeTray'
     # 以前の版が作っていたフォルダー（トレイ・管理画面・アンインストールの 3 つ）は消す
     Remove-Item (Join-Path $programs 'AdGuard Home') -Recurse -Force -ErrorAction SilentlyContinue
 

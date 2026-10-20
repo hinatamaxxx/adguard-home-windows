@@ -289,7 +289,7 @@ namespace AdGuardHomeTray
             if (InMaintenance() || OwnActionActive("Restart", "Update")) { stoppedSince = DateTime.Now; return; }
             if ((DateTime.Now - stoppedSince.Value).TotalSeconds < 10) return;
             stoppedSince = null;
-            tray.ShowBalloonTip(5000, "AdGuard Home", "AdGuard Home が停止しました。", ToolTipIcon.Warning);
+            ShowBalloon(5000, "AdGuard Home", "AdGuard Home が停止しました。", ToolTipIcon.Warning);
         }
 
         void UpdateVisuals()
@@ -417,7 +417,7 @@ namespace AdGuardHomeTray
                     UpdateVisuals();
                     if (error != null)
                     {
-                        if (interactive) tray.ShowBalloonTip(5000, "AdGuard Home", "更新の確認に失敗しました: " + error, ToolTipIcon.Error);
+                        if (interactive) ShowBalloon(5000, "AdGuard Home", "更新の確認に失敗しました: " + error, ToolTipIcon.Error);
                         return;
                     }
                     if (IsUpdateAvailable())
@@ -433,7 +433,7 @@ namespace AdGuardHomeTray
                     }
                     else if (interactive)
                     {
-                        tray.ShowBalloonTip(4000, "AdGuard Home", "最新バージョンです（" + (currentVersion == "" ? latestVersion : currentVersion) + "）。", ToolTipIcon.Info);
+                        ShowBalloon(4000, "AdGuard Home", "最新バージョンです（" + (currentVersion == "" ? latestVersion : currentVersion) + "）。", ToolTipIcon.Info);
                     }
                 });
             });
@@ -565,9 +565,9 @@ namespace AdGuardHomeTray
         {
             if (action == "Update")
             {
-                if (code == 0) tray.ShowBalloonTip(5000, "AdGuard Home", "更新処理が完了しました。", ToolTipIcon.Info);
-                else if (code == 2) tray.ShowBalloonTip(5000, "AdGuard Home", "すでに最新バージョンです。", ToolTipIcon.Info);
-                else tray.ShowBalloonTip(5000, "AdGuard Home", "更新に失敗しました。ログ（manage.log）を確認してください。", ToolTipIcon.Error);
+                if (code == 0) ShowBalloon(5000, "AdGuard Home", "更新処理が完了しました。", ToolTipIcon.Info, null, 0);   // 版の再取得前でも「更新あり」にしない
+                else if (code == 2) ShowBalloon(5000, "AdGuard Home", "すでに最新バージョンです。", ToolTipIcon.Info);
+                else ShowBalloon(5000, "AdGuard Home", "更新に失敗しました。ログ（manage.log）を確認してください。", ToolTipIcon.Error);
                 notifiedLatest = false;
                 RefreshCurrentVersionAsync();
             }
@@ -903,10 +903,14 @@ namespace AdGuardHomeTray
                 Post(delegate
                 {
                     if (error != null)
-                        tray.ShowBalloonTip(5000, "AdGuard Home", "保護の切り替えに失敗しました: " + error, ToolTipIcon.Error);
+                        ShowBalloon(5000, "AdGuard Home", "保護の切り替えに失敗しました: " + error, ToolTipIcon.Error);
                     else
-                        tray.ShowBalloonTip(3000, "AdGuard Home", enabled ? "保護を有効にしました。"
+                    {
+                        protectionEnabled = enabled;   // 通知とトレイのアイコンを新しい状態にそろえる
+                        UpdateVisuals();
+                        ShowBalloon(3000, "AdGuard Home", enabled ? "保護を有効にしました。"
                             : "保護を無効にしました" + (durationMs > 0 ? "（" + FormatDuration(durationMs) + "後に再開）。" : "。"), ToolTipIcon.Info);
+                    }
                     RefreshApiAsync();
                 });
             });
@@ -1123,7 +1127,7 @@ namespace AdGuardHomeTray
                 }
                 AghApi.SaveCredentials(form.UserName, form.Password);
                 api.SetCredentials(form.UserName, form.Password);
-                tray.ShowBalloonTip(3000, "AdGuard Home", "ログイン情報を保存しました。", ToolTipIcon.Info);
+                ShowBalloon(3000, "AdGuard Home", "ログイン情報を保存しました。", ToolTipIcon.Info);
                 RefreshMenuChecks();
                 RefreshApiAsync();
             }

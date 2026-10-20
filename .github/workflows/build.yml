@@ -1,0 +1,54 @@
+# ビルド確認と、タグ（v*）を付けたときのリリース用 ZIP の作成
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build tray app
+        shell: powershell
+        run: ./build.ps1
+
+      - name: Check scripts parse
+        shell: powershell
+        run: |
+          $bad = 0
+          Get-ChildItem -Recurse -Include *.ps1 | ForEach-Object {
+            $errors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            if ($errors) { Write-Host "::error file=$($_.FullName)::$($errors[0].Message)"; $bad++ }
+          }
+          if ($bad) { exit 1 }
+
+      - name: Make package
+        shell: powershell
+        run: |
+          $pkg = 'AdGuardHomeTray'
+          New-Item -ItemType Directory -Force "dist/$pkg/build" | Out-Null
+          Copy-Item build/AdGuardHomeTray.exe, build/*.dll "dist/$pkg/build/"
+          Copy-Item Setup.cmd, install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
+          Copy-Item scripts, lib, src -Destination "dist/$pkg/" -Recurse
+          Compress-Archive -Path "dist/$pkg" -DestinationPath "dist/$pkg.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AdGuardHomeTray
+          path: dist/AdGuardHomeTray.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/AdGuardHomeTray.zip --title "${{ github.ref_name }}" --generate-notes

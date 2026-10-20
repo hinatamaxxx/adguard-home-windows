@@ -6,9 +6,9 @@
 
 ## かんたん導入
 
-**コマンド 1 行で入れる（いちばん簡単）**
+**コマンド 1 行で入れる**
 
-PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。最新のリリースをダウンロードして SHA-256 を照合し、セットアップ画面を開きます（中身は [get.ps1](get.ps1)）。「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選んでください。
+PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。「このアプリがデバイスに変更を加えることを許可しますか？」と表示されたら「はい」を選んでください。最新のリリースをダウンロードして SHA-256 を照合し、画面を出さずにインストールして、ログオン時の自動起動を設定し、トレイアプリを起動します（中身は [get.ps1](get.ps1)）。
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -26,11 +26,6 @@ https://github.com/hinatamaxxx/adguard-home-windows を導入して。
 
 - 家のほかの機器（スマホ・タブレット・ゲーム機など）でも使いたい
 - 外出先の iPhone / iPad でも使いたい（Tailscale を使います）
-
-**ZIP から入れる**
-
-1. [Releases](https://github.com/hinatamaxxx/adguard-home-windows/releases/latest) から `AdGuardHomeTray.zip` をダウンロードして展開する（ソースからビルドする場合は、リポジトリの ZIP か `git clone` でも入れられます。初回に自動でビルドします）
-2. `Setup.cmd` をダブルクリックし、「インストール」を押して、確認で「はい」を選ぶ
 
 **インストールしたあと**
 
@@ -66,13 +61,13 @@ https://github.com/hinatamaxxx/adguard-home-windows を導入して。
 
 ![管理画面ウィンドウ](screenshots/dashboard.png)
 
-| セットアップ | アンインストール |
+| アンインストール | 停止の確認 |
 |---|---|
-| ![セットアップ](screenshots/setup.png) | ![アンインストール](screenshots/dialog-uninstall.png) |
+| ![アンインストール](screenshots/dialog-uninstall.png) | ![停止の確認](screenshots/dialog-stop.png) |
 
-| 停止の確認 | 終了の確認 |
-|---|---|
-| ![停止の確認](screenshots/dialog-stop.png) | ![終了の確認](screenshots/dialog-exit.png) |
+| 終了の確認 |
+|---|
+| ![終了の確認](screenshots/dialog-exit.png) |
 
 ## 主な機能
 
@@ -102,9 +97,9 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 
 ## インストール・更新
 
-セットアップ画面で入るものを確認し、「インストール」（入れてあれば「更新」）を押します。「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選び、完了の画面が出たら終わりです。セットアップ画面では「Windows の起動時にトレイアプリを自動で起動する」（新しく入れるときは既定でオフ、更新のときは今の状態のまま）と、「完了したらトレイアプリを起動する」を選べます。
+入れ方は上の「かんたん導入」のとおりです。入れたあとは自動で更新されます（下の「更新のしくみ」）。ログオン時の自動起動は、トレイのメニュー「その他」か、Windows の「設定 → アプリ → スタートアップ」でオフにできます。
 
-`install.ps1` を管理者の PowerShell で直接実行しても、同じようにインストールできます（画面なし）。
+ソースからビルドして入れる場合は、`build.ps1` を実行してから、`install.ps1` を管理者の PowerShell で実行します。
 
 ## 構成
 
@@ -142,7 +137,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 ```
 アップデート ▸
   AdGuard Home v0.107.79（最新です）
-  このアプリ v1.8.0（最新です）
+  このアプリ v1.8.4（最新です）
   ─────────────
   今すぐ確認して更新
   ✓ 自動で更新する（毎日）
@@ -167,11 +162,11 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 
 ## ファイル
 
-- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。最新のリリースの ZIP を SHA-256 で照合し、セットアップ画面を開く
+- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。最新のリリースの ZIP を SHA-256 で照合し、画面を出さずにインストールする
 - `src/AdGuardHomeTray.cs`: トレイアプリ（.NET Framework 4.x の `csc.exe` でビルド）
 - `src/L10n.cs`: 表示の言語（日本語・英語）
 - `src/DashboardForm.cs`: 管理画面の専用ウィンドウ（WebView2） / `src/Theme.cs`: ライト/ダーク対応
-- `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風） / `src/SetupDialog.cs`・`src/UninstallDialog.cs`・`src/ExitDialog.cs`・`src/StopDialog.cs`: セットアップ・アンインストール・終了・停止の画面
+- `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風） / `src/UninstallDialog.cs`・`src/ExitDialog.cs`・`src/StopDialog.cs`: アンインストール・終了・停止の画面
 - `src/TrayContext.MenuHover.cs`: メニュー項目にマウスを乗せたときの説明
 - `src/TrayContext.Update.cs`: バージョンの表示、今すぐ更新、自動更新の失敗の通知、更新後の自動再起動
 - `src/TrayContext.SubmenuUp.cs`: 子メニューを親の項目より上に向かって開く
@@ -181,8 +176,7 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 - `scripts/configure-adguard.ps1`: AdGuard Home の設定変更（`-EnableFunnelDoH` で Funnel 経由の DoH を受ける、`-Faster` で速くする。確かめてから反映し、バックアップも取る）
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: iOS 用の DNS プロファイルの作成 / 端末名の登録
 - `AGENTS.md`（`CLAUDE.md` から読み込む）: AI エージェント向けの導入手順
-- `Setup.cmd`: セットアップ画面を開く（`build\AdGuardHomeTray.exe --setup`）
-- `install.ps1`: インストールの本体（管理者で実行。セットアップ画面から UAC で呼ばれる）
+- `install.ps1`: インストールの本体（管理者で実行。`get.ps1` から UAC で呼ばれる）
 - `uninstall.ps1`: アンインストール（Windows の「設定 → アプリ → インストールされているアプリ」の「AdGuard Home for Windows」から実行できる。自動で管理者に昇格する。既定で設定とデータもすべて削除し、確認画面の「設定とデータを残す」にチェックを入れたときだけ残す。確認なしで実行するには `-Quiet`、残すには `-KeepSettings`）
 
 ## 変更するレジストリとファイルの一覧

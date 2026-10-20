@@ -1,7 +1,8 @@
 # AdGuard Home for Windows をコマンド 1 行で導入する。PowerShell に次を貼り付けて実行する（管理者でなくてよい）:
 #   irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
-# 最新のリリースの ZIP を取得し、同じリリースの SHA-256 と照合してから、セットアップ画面を開く。
-# AdGuard Home 本体は、セットアップ（install.ps1）が AdGuard 公式の配布元から取得し、署名を確認して入れる。
+# 最新のリリースの ZIP を取得し、同じリリースの SHA-256 と照合してから、画面を出さずにインストールする
+# （管理者権限が要るので UAC の確認だけは出る）。続けて、ログオン時の自動起動を設定してトレイアプリを起動する。
+# AdGuard Home 本体は、install.ps1 が AdGuard 公式の配布元から取得し、署名を確認して入れる。
 # このファイルは irm | iex で読み込むため、BOM なしの UTF-8 で保存する（BOM があると iex が失敗する）。
 & {
     $ErrorActionPreference = 'Stop'
@@ -37,12 +38,34 @@
         # Expand-Archive は、言語の表示用データが欠けた Windows（Windows Sandbox など）で読み込めないことがあるので、.NET で展開する
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
-        $exe = Join-Path $work 'x\AdGuardHomeTray\build\AdGuardHomeTray.exe'
-        if (-not (Test-Path $exe)) { throw (T 'ZIP の中身が想定と違います。' 'The ZIP file does not contain the expected files.') }
+        $pkg = Join-Path $work 'x\AdGuardHomeTray'
+        if (-not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw (T 'ZIP の中身が想定と違います。' 'The ZIP file does not contain the expected files.') }
 
-        Write-Host (T 'セットアップ画面を開きます。「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選んでください。' 'Opening the setup window. Click Install, and choose Yes when Windows asks "Do you want to allow this app to make changes to your device?"')
-        Start-Process $exe '--setup' -Wait
-        Write-Host (T 'セットアップ画面を閉じました。インストールした場合は、通知領域の AdGuard Home のアイコンをダブルクリックすると、初期設定の画面が開きます。' 'The setup window was closed. If you installed it, double-click the AdGuard Home icon in the notification area to start the initial setup.')
+        Write-Host (T 'インストールしています。「このアプリがデバイスに変更を加えることを許可しますか？」と表示されたら「はい」を選んでください...' 'Installing. When Windows asks "Do you want to allow this app to make changes to your device?", choose Yes...')
+        try {
+            $p = Start-Process powershell.exe -Verb RunAs -Wait -PassThru -WindowStyle Hidden `
+                -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $pkg 'install.ps1')`""
+        } catch {
+            throw (T '管理者の許可が得られなかったため、中止しました。' 'Canceled because administrator permission was not given.')
+        }
+        if ($p.ExitCode -ne 0) {
+            $reason = Select-String (Join-Path $pkg 'install.log') -Pattern 'INSTALL FAILED: (.*?)( @ |$)' -ErrorAction SilentlyContinue | Select-Object -Last 1
+            throw ((T 'インストールに失敗しました: ' 'Installation failed: ') + $(if ($reason) { $reason.Matches[0].Groups[1].Value } else { "exit code $($p.ExitCode)" }))
+        }
+
+        # ログオン時の自動起動（スタートアップフォルダーのショートカット。トレイのメニューや Windows の設定でオフにできる）
+        $trayDir = Join-Path $env:ProgramFiles 'AdGuardHome Tray'
+        try { $set = Get-Content (Join-Path $env:ProgramData 'AdGuardHome\settings.json') -Raw | ConvertFrom-Json; if ($set.TrayDir) { $trayDir = $set.TrayDir } } catch { }
+        $trayExe = Join-Path $trayDir 'AdGuardHomeTray.exe'
+        $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Startup')) 'AdGuard Home.lnk'))
+        $lnk.TargetPath = $trayExe
+        $lnk.WorkingDirectory = $trayDir
+        $lnk.IconLocation = "$trayExe,0"
+        $lnk.Description = (T 'AdGuard Home を通知領域から管理' 'Manage AdGuard Home from the notification area')
+        $lnk.Save()
+
+        if (-not (Get-Process AdGuardHomeTray -ErrorAction SilentlyContinue)) { Start-Process $trayExe -WorkingDirectory $trayDir }
+        Write-Host (T 'インストールしました。通知領域の AdGuard Home のアイコンをダブルクリックすると、初期設定の画面が開きます。' 'Installed. Double-click the AdGuard Home icon in the notification area to start the initial setup.')
     } finally {
         Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
     }

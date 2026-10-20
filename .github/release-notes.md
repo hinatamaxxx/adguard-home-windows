@@ -2,13 +2,13 @@ AdGuard Home を Windows サービスとして動かし、通知領域のアイ�
 
 ## 入れ方
 
-PowerShell に次を貼り付けて Enter を押します（管理者でなくてかまいません）。最新版を SHA-256 で照合してから、セットアップ画面を開きます。
+PowerShell に次を貼り付けて Enter を押します（管理者でなくてかまいません）。最新版を SHA-256 で照合し、画面を出さずにインストールして、トレイアプリを起動します（UAC の確認で「はい」を選んでください）。
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
 ```
 
-`AdGuardHomeTray.zip` を展開して `Setup.cmd` をダブルクリックする方法もあります。AI エージェントに頼む方法は [README](https://github.com/hinatamaxxx/adguard-home-windows#かんたん導入) を見てください。
+AI エージェントに頼む方法は [README](https://github.com/hinatamaxxx/adguard-home-windows#かんたん導入) を見てください。
 
 ## 主な機能
 
@@ -22,7 +22,7 @@ irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.
 
 ## 添付ファイル
 
-- `AdGuardHomeTray.zip`: ビルド済みのセットアップ一式
+- `AdGuardHomeTray.zip`: ビルド済みの一式（コマンド 1 行の導入と自動更新が使う）
 - `AdGuardHomeTray.zip.sha256`: 上の ZIP の SHA-256（自動更新と `get.ps1` が照合に使う）
 
 AdGuard Home 本体は含みません。セットアップ時に AdGuard 公式の配布元から取得し、署名を確認してから入れます。不具合の報告やサポートは受け付けていません（[LICENSE](https://github.com/hinatamaxxx/adguard-home-windows/blob/main/LICENSE) のとおり、現状のまま提供します）。
@@ -33,7 +33,7 @@ AdGuard Home 本体は含みません。セットアップ時に AdGuard 公式�
 
 A setup kit that runs AdGuard Home as a Windows service and lets you manage it from a notification area icon (not affiliated with AdGuard).
 
-**Install:** paste this into PowerShell. It checks the SHA-256 of the latest version and opens the setup window:
+**Install:** paste this into PowerShell. It checks the SHA-256 of the latest version, installs it without any windows, and starts the tray app (choose Yes at the UAC prompt):
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex

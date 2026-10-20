@@ -107,6 +107,7 @@ namespace AdGuardHomeTray
                 if (m.Msg == 0x011F /* WM_MENUSELECT */)
                 {
                     long w = m.WParam.ToInt64();
+                    try { owner.RememberPopupSelection(m.LParam, (int)(w & 0xFFFF), (int)((w >> 16) & 0xFFFF)); } catch { }
                     try { owner.OnMenuSelect(m.LParam, (int)(w & 0xFFFF), (int)((w >> 16) & 0xFFFF)); } catch { }
                 }
                 base.WndProc(ref m);

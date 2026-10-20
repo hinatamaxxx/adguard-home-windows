@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("AdGuard Home を通知領域から管理")]
 [assembly: AssemblyCompany("個人用ツール")]
 [assembly: AssemblyProduct("AdGuard Home Tray")]
-[assembly: AssemblyVersion("1.7.1.0")]
-[assembly: AssemblyFileVersion("1.7.1.0")]
+[assembly: AssemblyVersion("1.7.2.0")]
+[assembly: AssemblyFileVersion("1.7.2.0")]
 
 namespace AdGuardHomeTray
 {
@@ -157,7 +157,7 @@ namespace AdGuardHomeTray
             miUpdateNow = new MenuItem("今すぐ確認して更新", delegate { UpdateNow(); });
             miAutoUpdate = new MenuItem("自動で更新する（毎日）", delegate { ToggleAutoUpdate(); });
             var miUpdate = new MenuItem("アップデート");
-            miUpdate.MenuItems.AddRange(new MenuItem[] { miAghVersion, miAppVersion, new MenuItem("-"), miUpdateNow, miAutoUpdate });
+            miUpdate.MenuItems.AddRange(new MenuItem[] { miUpdateNow, miAutoUpdate, new MenuItem("-"), miAghVersion, miAppVersion });
 
             miAutoStart = new MenuItem("Windows 起動時に自動起動", delegate { ToggleAutoStart(); });
             // 終了はメインメニューの最後に常に表示する（見つからないと不安になるため）。

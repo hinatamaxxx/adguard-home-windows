@@ -1,21 +1,38 @@
 # AdGuard Home Tray for Windows
 
-> **English summary:** Run the official AdGuard Home as a Windows service and manage it from a tray icon (status, pause protection, updates, a dedicated dashboard window). Includes a one-click setup, automatic updates, and a script to use it from iOS outside your home via Tailscale Funnel. The easiest way to install is to give this repository URL to an AI coding agent (Claude Code / Codex) and ask it to set it up — see [AGENTS.md](AGENTS.md). Documentation is in Japanese. Not affiliated with AdGuard. Provided as-is; issues, bug reports and support requests are not accepted.
+> **English summary:** Run the official AdGuard Home as a Windows service and manage it from a tray icon (status, pause protection, updates, a dedicated dashboard window). Includes a one-click setup, automatic updates, and a script to use it from iOS outside your home via Tailscale Funnel. Install with one PowerShell command (`irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows-tray/main/get.ps1 | iex`), or give this repository URL to an AI coding agent (Claude Code / Codex) and ask it to set it up — see [AGENTS.md](AGENTS.md). Documentation is in Japanese. Not affiliated with AdGuard. Provided as-is; issues, bug reports and support requests are not accepted.
 
 公式の [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) を Windows サービスとして動かし、通知領域（タスクトレイ）のアイコンから状態の確認・保護の一時停止・更新・管理画面の表示ができるようにするセットアップ一式です。コンソール画面を出しっぱなしにする必要はなく、PC の起動時に自動で動きます。
 
 ## かんたん導入
 
-**いちばん簡単なのは、AI に頼む方法です。** Claude Code や Codex などの AI エージェントにこのリポジトリの URL を渡して、次のように頼んでください。導入手順は [AGENTS.md](AGENTS.md) にまとめてあり、AI はそれに沿って進めます。管理者権限の確認（UAC）やパスワードの設定など、本人が行う操作は AI が案内します。
+**コマンド 1 行で入れる**（AdGuard Home 本体とこのアプリ一式）
+
+PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。
+
+```powershell
+irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows-tray/main/get.ps1 | iex
+```
+
+最新のリリースをダウンロードして SHA-256 を照合し、セットアップ画面を開きます（中身は [get.ps1](get.ps1)）。「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を選んでください。終わったら、通知領域のアイコンをダブルクリックして、AdGuard Home の初期設定（管理者のユーザー名・パスワードを決める）を行います。
+
+**AI に頼む**
+
+Claude Code や Codex などの AI エージェントに、次のように頼んでください。導入手順は [AGENTS.md](AGENTS.md) にまとめてあり、AI はそれに沿って進めます。管理者権限の確認（UAC）やパスワードの設定など、本人が行う操作は AI が案内します。
 
 ```
-https://github.com/hinatamaxxx/adguard-home-windows-tray を導入して。外出先の iPhone でも使いたい。
+https://github.com/hinatamaxxx/adguard-home-windows-tray を導入して。
 ```
 
-**自分で入れる場合**
+必要に応じて、次のことも一緒に伝えると、その設定まで案内します。
 
-1. [Releases](https://github.com/hinatamaxxx/adguard-home-windows-tray/releases) からビルド済みの `AdGuardHomeTray.zip` をダウンロードして展開する（ソースから入れる場合は ZIP / `git clone` でも可。その場合は初回に自動でビルドします）
-2. `Setup.cmd` をダブルクリックする（初回は自動でビルドしてから、セットアップ画面が開きます）
+- 家のほかの機器（スマホ・タブレット・ゲーム機など）でも使いたい
+- 外出先の iPhone / iPad でも使いたい（Tailscale を使います）
+
+**ZIP から入れる**
+
+1. [Releases](https://github.com/hinatamaxxx/adguard-home-windows-tray/releases/latest) からビルド済みの `AdGuardHomeTray.zip` をダウンロードして展開する（ソースから入れる場合は ZIP / `git clone` でも可。その場合は初回に自動でビルドします）
+2. `Setup.cmd` をダブルクリックする
 3. 「インストール」を押し、「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」
 4. 通知領域のアイコンをダブルクリックして、AdGuard Home の初期設定（管理者のユーザー名・パスワードを決める）を行う
 
@@ -139,6 +156,7 @@ AdGuard Home はこの PC で動くので、**PC がスリープ・電源オフ�
 
 ## ファイル
 
+- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため BOM なしの UTF-8）。最新リリースの ZIP を SHA-256 で照合してセットアップ画面を開く
 - `src/AdGuardHomeTray.cs`: トレイアプリ（.NET Framework 4.x の `csc.exe` でビルド）
 - `src/DashboardForm.cs`: 管理画面の専用ウィンドウ（WebView2） / `src/Theme.cs`: ライト/ダーク対応
 - `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風。角丸ボタン・ボタン帯・ライト/ダーク） / `src/SetupDialog.cs`・`src/UninstallDialog.cs`・`src/ExitDialog.cs`: セットアップ・アンインストール・終了の画面

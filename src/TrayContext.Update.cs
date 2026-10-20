@@ -2,6 +2,7 @@
 // 入れ替えは SYSTEM のタスク（manage.ps1）が行うので UAC は出ない。自動更新がオンなら、成功や新しい版は通知しない。
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -17,6 +18,10 @@ namespace AdGuardHomeTray
         // 起動したときの exe の場所（更新で中身が入れ替わっても、同じ場所の新しい版を見る）
         static readonly string ExePath = Application.ExecutablePath;
         static readonly Version AppVersion = Assembly.GetExecutingAssembly().GetName().Version;
+        // 起動時の exe の更新日時とサイズ。入れ替わりはこれで判断する
+        // （FileVersionInfo は、読み込み中の exe と同じパスだとメモリ上の古い版の情報を返すため使えない）
+        static readonly DateTime ExeStamp = File.GetLastWriteTimeUtc(ExePath);
+        static readonly long ExeLength = new FileInfo(ExePath).Length;
 
         string appLatestVersion = "";
         string notifiedAgh = "", notifiedApp = "";   // 自動更新オフのとき、同じ版は 1 回だけ知らせる
@@ -165,10 +170,12 @@ namespace AdGuardHomeTray
         void CheckSelfUpdated()
         {
             if (InMaintenance()) return;   // 入れ替えの途中
-            Version onDisk;
-            try { onDisk = new Version(FileVersionInfo.GetVersionInfo(ExePath).FileVersion); }
+            try
+            {
+                var fi = new FileInfo(ExePath);
+                if (!fi.Exists || (fi.LastWriteTimeUtc == ExeStamp && fi.Length == ExeLength)) return;
+            }
             catch { return; }
-            if (onDisk <= AppVersion) return;
             foreach (Form f in Application.OpenForms) if (f.Visible) return;   // 開いている画面があれば、閉じるまで待つ
             try { Process.Start(ExePath, "--wait-pid " + Process.GetCurrentProcess().Id); }
             catch { return; }

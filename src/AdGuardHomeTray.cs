@@ -29,9 +29,17 @@ namespace AdGuardHomeTray
         // 起動済みのトレイに「管理画面を開いて」と伝えるイベント（--dashboard で起動したとき用）
         internal const string ShowDashboardEvent = "Local\\AdGuardHomeTray_ShowDashboard";
 
+        // アプリの ID（AppUserModelID）。スタートメニューのショートカットにも同じ ID を付ける（install.ps1）。
+        // 通知の見出しやタスクバーは、この ID でショートカットの名前とアイコンを使う
+        internal const string AppUserModelId = "AdGuardHomeTray";
+
+        [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
+
         [STAThread]
         static int Main(string[] args)
         {
+            SetCurrentProcessExplicitAppUserModelID(AppUserModelId);   // ウィンドウやトレイアイコンを作る前に
             // アンインストールの確認画面だけを出して終了する（uninstall.ps1 から呼ばれる）
             if (Array.Exists(args, a => string.Equals(a, "--uninstall-dialog", StringComparison.OrdinalIgnoreCase)))
             {

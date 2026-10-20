@@ -2,12 +2,12 @@
 # 識別子（ClientID・IP・MAC など）に表示名を付けると、クエリログや統計にその名前で出る。
 # プロファイルや Funnel の設定は変えない。
 #
-# 例: プロファイルの ClientID が iphone の端末を「iPhone17」と表示する
-#   powershell -ExecutionPolicy Bypass -File set-client-name.ps1 -Id iphone -Name iPhone17
+# 例: プロファイルの ClientID が iphone の端末を「わたしの iPhone」と表示する
+#   powershell -ExecutionPolicy Bypass -File set-client-name.ps1 -Id iphone -Name "わたしの iPhone"
 # 管理画面のユーザー名・パスワードは実行時に Windows の入力画面で聞く（ファイルや引数に書かない）。
 param(
     [Parameter(Mandatory)][string]$Id,            # 識別子（例: iphone、192.168.1.20、aa:bb:cc:dd:ee:ff）
-    [Parameter(Mandatory)][string]$Name,          # 表示名（例: iPhone17）
+    [Parameter(Mandatory)][string]$Name,          # 表示名（例: わたしの iPhone）
     [string]$BaseUrl = 'http://127.0.0.1/',       # 管理画面の URL
     [pscredential]$Credential
 )

@@ -205,7 +205,9 @@ function Invoke-TrayUpdate {
         $actual = (Get-FileHash $zip -Algorithm SHA256).Hash
         if (-not $expected -or $actual -ne $expected.Trim()) { throw "tray: SHA-256 mismatch (expected=$expected actual=$actual)" }
 
-        Expand-Archive $zip (Join-Path $work 'x')
+        # Expand-Archive は、言語の表示用データが欠けた Windows（Windows Sandbox など）で読み込めないことがあるので、.NET で展開する
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
         $pkg = Join-Path $work 'x\AdGuardHomeTray'
         $newExe = Join-Path $pkg 'build\AdGuardHomeTray.exe'
         if (-not (Test-Path $newExe) -or -not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw 'tray: unexpected package layout' }

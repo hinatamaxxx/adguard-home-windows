@@ -153,7 +153,9 @@ try {
             $pkgName = if ($arch -eq 'ARM64') { 'AdGuardHome_windows_arm64.zip' } else { 'AdGuardHome_windows_amd64.zip' }
             $zip = Join-Path $tmp $pkgName
             Invoke-WebRequest "https://static.adtidy.org/adguardhome/release/$pkgName" -OutFile $zip -UseBasicParsing
-            Expand-Archive $zip (Join-Path $tmp 'x')
+            # Expand-Archive は、言語の表示用データが欠けた Windows（Windows Sandbox など）で読み込めないことがあるので、.NET で展開する
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $tmp 'x'))
             $AdGuardExe = Join-Path $tmp 'x\AdGuardHome\AdGuardHome.exe'
         }
         $sig = Get-AuthenticodeSignature $AdGuardExe

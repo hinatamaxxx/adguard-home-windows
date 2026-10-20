@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.2.0")]
-[assembly: AssemblyFileVersion("1.8.2.0")]
+[assembly: AssemblyVersion("1.8.3.0")]
+[assembly: AssemblyFileVersion("1.8.3.0")]
 
 namespace AdGuardHomeTray
 {
@@ -808,7 +808,7 @@ namespace AdGuardHomeTray
             {
                 foreach (var opt in new[] { new object[] { L.T("1 分間 無効にする", "Pause for 1 minute"), 60000L }, new object[] { L.T("10 分間 無効にする", "Pause for 10 minutes"), 600000L },
                                             new object[] { L.T("1 時間 無効にする", "Pause for 1 hour"), 3600000L }, new object[] { L.T("8 時間 無効にする", "Pause for 8 hours"), 28800000L },
-                                            new object[] { L.T("有効にするまで無効にする", "Pause until turned back on"), 0L } })
+                                            new object[] { L.T("再開するまで無効にする", "Pause until resumed"), 0L } })
                 {
                     long ms = (long)opt[1];
                     items.Add(new MenuItem((string)opt[0], delegate { SetProtection(false, ms); }));
@@ -816,7 +816,7 @@ namespace AdGuardHomeTray
             }
             else if (protectionEnabled == false)
             {
-                items.Add(new MenuItem(L.T("保護を有効にする", "Turn protection on"), delegate { SetProtection(true, 0); }));
+                items.Add(new MenuItem(L.T("保護を再開する", "Resume protection"), delegate { SetProtection(true, 0); }));
             }
             else
             {
@@ -856,7 +856,7 @@ namespace AdGuardHomeTray
                     {
                         protectionEnabled = enabled;   // 通知とトレイのアイコンを新しい状態にそろえる
                         UpdateVisuals();
-                        ShowBalloon(3000, "AdGuard Home", enabled ? L.T("保護を有効にしました。", "Protection is on.")
+                        ShowBalloon(3000, "AdGuard Home", enabled ? L.T("保護を再開しました。", "Protection resumed.")
                             : durationMs > 0 ? L.T("保護を無効にしました（" + FormatDuration(durationMs) + "後に再開）。", "Protection is off (back on in " + FormatDuration(durationMs) + ").")
                             : L.T("保護を無効にしました。", "Protection is off."), ToolTipIcon.Info);
                     }

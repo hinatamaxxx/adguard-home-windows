@@ -99,7 +99,7 @@ AdGuard Home はこの PC で動くので、**PC がスリープ・電源オフ�
 | `%APPDATA%\AdGuardHomeTray\credentials.dat` | 管理画面のログイン情報（Windows DPAPI でユーザー単位に暗号化） |
 | サービス `AdGuardHome` | PC 起動時に自動開始。コンソール画面は出ない。異常終了したら自動で再起動 |
 | タスク `AdGuardHome AutoUpdate` | 起動時・ログオン時・毎日 4:30 頃に SYSTEM で実行。バージョン情報を記録し、自動更新が有効なら最新版へ更新 |
-| `スタートアップ\AdGuard Home Tray.lnk` | ログオン時にトレイアプリを起動（利用者ごとのスタートアップフォルダー）。オン/オフは Windows の「設定 → アプリ → スタートアップ」とトレイメニューのどちらでも切り替えられる |
+| `スタートアップ\AdGuard Home.lnk` | ログオン時にトレイアプリを起動（利用者ごとのスタートアップフォルダー）。オン/オフは Windows の「設定 → アプリ → スタートアップ」とトレイメニューのどちらでも切り替えられる |
 
 ## トレイアイコン
 
@@ -166,7 +166,7 @@ Windows の「スタートアップ」でオン/オフを切り替えると、Wi
 | `C:\ProgramData\AdGuardHome\`（`settings.json`、`logs\`、更新中だけ置く `maintenance.json`） | 共有設定・ログ | 削除 |
 | `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\AdGuard Home.lnk` | スタートメニューの「AdGuard Home」（管理画面を開く） | 削除 |
 | タスク スケジューラ `AdGuardHome AutoUpdate` | 情報更新・自動更新 | 削除 |
-| `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AdGuard Home Tray.lnk` | ログオン時の自動起動（トレイメニューでオンにしたときだけ） | 削除 |
+| `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AdGuard Home.lnk` | ログオン時の自動起動（トレイメニューでオンにしたときだけ） | 削除 |
 | `%APPDATA%\AdGuardHomeTray\` | トレイのログイン情報（利用者ごと） | 削除（「設定とデータを残す」を選んだときは残す） |
 | `%LOCALAPPDATA%\AdGuardHomeTray\` | 管理画面ウィンドウのデータ（WebView2 のキャッシュ・ログイン状態、`window.txt` にウィンドウ位置） | 削除（「設定とデータを残す」を選んだときは残す） |
 

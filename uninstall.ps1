@@ -86,7 +86,9 @@ Remove-Item (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\A
 # 「インストールされているアプリ」の登録（このアプリが書く唯一のレジストリ）
 Remove-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue
 # 自動起動のショートカット。StartupApproved\StartupFolder の値は Windows が管理するので消さない
-Remove-Item (Join-Path ([Environment]::GetFolderPath('Startup')) 'AdGuard Home Tray.lnk') -Force -ErrorAction SilentlyContinue
+foreach ($name in 'AdGuard Home.lnk', 'AdGuard Home Tray.lnk') {   # 後者は 1.5.0 までの名前
+    Remove-Item (Join-Path ([Environment]::GetFolderPath('Startup')) $name) -Force -ErrorAction SilentlyContinue
+}
 # 旧版の Run 方式の登録（残っていれば消す）
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name AdGuardHomeTray -ErrorAction SilentlyContinue
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run' -Name AdGuardHomeTray -ErrorAction SilentlyContinue

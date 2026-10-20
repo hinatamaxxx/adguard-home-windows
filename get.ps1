@@ -34,7 +34,9 @@
         if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $expected) {
             throw (T 'ダウンロードしたファイルが一致しません（SHA-256）。もう一度実行してください。' 'The downloaded file does not match (SHA-256). Please run the command again.')
         }
-        Expand-Archive $zip (Join-Path $work 'x')
+        # Expand-Archive は、言語の表示用データが欠けた Windows（Windows Sandbox など）で読み込めないことがあるので、.NET で展開する
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
         $exe = Join-Path $work 'x\AdGuardHomeTray\build\AdGuardHomeTray.exe'
         if (-not (Test-Path $exe)) { throw (T 'ZIP の中身が想定と違います。' 'The ZIP file does not contain the expected files.') }
 

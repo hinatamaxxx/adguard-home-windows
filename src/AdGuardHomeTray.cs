@@ -15,7 +15,7 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 
 // AssemblyTitle（FileDescription）と AssemblyCompany は、Windows の「スタートアップ アプリ」に名前と発行元として表示される
-[assembly: AssemblyTitle("AdGuard Home Tray")]
+[assembly: AssemblyTitle("AdGuard Home")]   // Windows のスタートアップ設定・通知に出る名前
 [assembly: AssemblyDescription("AdGuard Home を通知領域から管理")]
 [assembly: AssemblyCompany("個人用ツール")]
 [assembly: AssemblyProduct("AdGuard Home Tray")]
@@ -89,7 +89,8 @@ namespace AdGuardHomeTray
         const string ServiceName = "AdGuardHome";
         const string VersionUrl = "https://static.adtidy.org/adguardhome/release/version.json";
         // 自動起動はスタートアップフォルダーのショートカット。アプリはレジストリに書かない
-        const string StartupLinkName = "AdGuard Home Tray.lnk";
+        const string StartupLinkName = "AdGuard Home.lnk";
+        const string OldStartupLinkName = "AdGuard Home Tray.lnk";   // 1.5.0 までの名前
         // Windows の「設定 → アプリ → スタートアップ」とタスク マネージャーのオン/オフを Windows が保存する場所（読むだけ）
         const string StartupApprovedFolderKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
         // 旧版が使っていた Run 方式の登録（起動時にショートカットへ移して削除する）
@@ -132,6 +133,7 @@ namespace AdGuardHomeTray
             logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"AdGuardHome\logs");
             managePs1 = Path.Combine(baseDir, "manage.ps1");
             MigrateLegacyAutoStart();
+            MigrateOldStartupLink();
 
             icoRunning = MakeIcon(0);
             icoStopped = MakeIcon(1);
@@ -606,13 +608,15 @@ namespace AdGuardHomeTray
         }
 
         // Windows 側のオン/オフ。値なし、または先頭バイトが偶数（02/06）ならオン、奇数（03 など）ならオフ
-        internal static bool IsApprovedByWindows()
+        internal static bool IsApprovedByWindows() { return IsApprovedByWindows(StartupLinkName); }
+
+        static bool IsApprovedByWindows(string linkName)
         {
             try
             {
                 using (var k = Registry.CurrentUser.OpenSubKey(StartupApprovedFolderKey))
                 {
-                    var data = k == null ? null : k.GetValue(StartupLinkName) as byte[];
+                    var data = k == null ? null : k.GetValue(linkName) as byte[];
                     return data == null || data.Length == 0 || (data[0] & 1) == 0;
                 }
             }
@@ -664,7 +668,7 @@ namespace AdGuardHomeTray
                     CreateStartupLink();   // 既存でもターゲットを現在の exe で作り直す
                     if (!IsApprovedByWindows())
                     {
-                        MessageBox.Show("Windows のスタートアップ設定でオフになっています。\n開いた設定画面で「AdGuard Home Tray」をオンにしてください。",
+                        MessageBox.Show("Windows のスタートアップ設定でオフになっています。\n開いた設定画面で「AdGuard Home」をオンにしてください。",
                             "AdGuard Home", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Shell("ms-settings:startupapps", null);
                     }
@@ -675,6 +679,19 @@ namespace AdGuardHomeTray
                 MessageBox.Show("自動起動を切り替えられませんでした: " + ex.Message, "AdGuard Home", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             RefreshMenuChecks();
+        }
+
+        // 1.5.0 までの名前（AdGuard Home Tray.lnk）から移行する。Windows の設定でオンだったときだけ新しい名前で作り直す
+        static void MigrateOldStartupLink()
+        {
+            try
+            {
+                string old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), OldStartupLinkName);
+                if (!File.Exists(old)) return;
+                if (IsApprovedByWindows(OldStartupLinkName) && !File.Exists(StartupLink)) CreateStartupLink();
+                File.Delete(old);
+            }
+            catch { }
         }
 
         // 旧版の Run 方式から移行する: オンだったときだけショートカットを作り、旧版が書いた値を削除する

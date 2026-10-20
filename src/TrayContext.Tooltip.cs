@@ -29,7 +29,8 @@ namespace AdGuardHomeTray
             else if (protectionEnabled == false) lines.Add("保護は無効です");
             else lines.Add("保護は有効です");
 
-            if (IsUpdateAvailable()) lines.Add("新しいバージョン " + latestVersion + " があります");
+            string pending = PendingUpdateText();   // 自動更新オフで新しい版があるときだけ
+            if (pending != null) lines.Add(pending);
             if (running && filtersUpdatedUtc.HasValue) lines.Add("フィルタは" + Ago(filtersUpdatedUtc.Value) + "に更新されました");
 
             // 63 文字に収まるまで、後ろの行から省く

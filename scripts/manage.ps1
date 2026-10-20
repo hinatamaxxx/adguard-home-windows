@@ -1,5 +1,5 @@
 ﻿# AdGuard Home の管理操作（管理者権限で実行される）。
-# トレイアプリから UAC 昇格で、またはタスク（起動時・ログオン時・毎日）から SYSTEM で呼ばれる。
+# トレイアプリから UAC 昇格で、またはタスク（起動時・ログオン時・毎日、および利用者が UAC なしで起動できる「今すぐ更新」）から SYSTEM で呼ばれる。
 # 終了コード: 0=成功/更新済み, 2=更新不要, 1=失敗
 param(
     [Parameter(Mandatory)]
@@ -9,6 +9,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $versionUrl = 'https://static.adtidy.org/adguardhome/release/version.json'
+# トレイアプリの配布元（GitHub Releases）
+$trayRepo = 'hinatamaxxx/adguard-home-windows-tray'
 # トレイアプリと共有する設定。管理者・SYSTEM だけが書き、ユーザーは読み取りのみ（install.ps1 がフォルダーの権限を設定）
 $settingsFile = Join-Path $env:ProgramData 'AdGuardHome\settings.json'
 
@@ -109,18 +111,14 @@ function Save-Info {
     Set-Setting WebUrl $url
     Save-Logo $url}
 
-function Invoke-Update([bool]$respectSetting) {
-    if ($respectSetting) {
-        $flag = (Get-Settings).AutoUpdate
-        if ($flag -ne 1) { Log 'auto update is disabled; skip'; return 2 }
-    }
-    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+# AdGuard Home 本体の更新。0=更新した, 2=最新
+function Invoke-AghUpdate {
     $cur = Get-CurrentVersion
     $latest = (Invoke-RestMethod -Uri $versionUrl -UseBasicParsing -TimeoutSec 60).version
     $vc = Get-Ver $cur; $vl = Get-Ver $latest
-    Log "current=$cur latest=$latest"
+    Log "AdGuard Home: current=$cur latest=$latest"
     if (-not $vc -or -not $vl) { throw "version parse failed (current='$cur', latest='$latest')" }
-    if ($vl -le $vc) { Log 'already up to date'; return 2 }
+    if ($vl -le $vc) { return 2 }
 
     # AdGuard Home 内蔵のアップデーター: バイナリを置換し、サービスを再起動する
     Enter-Maintenance 'Update'
@@ -138,8 +136,87 @@ function Invoke-Update([bool]$respectSetting) {
         Exit-Maintenance
     }
     Save-Info
-    Log ('updated to ' + (Get-CurrentVersion))
+    Log ('AdGuard Home updated to ' + (Get-CurrentVersion))
     return 0
+}
+
+# トレイアプリ自身の更新（GitHub Releases の最新版）。SYSTEM で動くので UAC は出ない。0=更新した, 2=最新
+# 取得元はこのリポジトリのリリースに固定し、同じリリースの SHA-256 と一致したものだけを入れる。
+function Invoke-TrayUpdate {
+    $trayDir = (Get-Settings).TrayDir
+    if (-not $trayDir) { $trayDir = Join-Path $env:ProgramFiles 'AdGuardHome Tray' }
+    $trayExe = Join-Path $trayDir 'AdGuardHomeTray.exe'
+    if (-not (Test-Path $trayExe)) { Log 'tray: not installed; skip'; return 2 }
+
+    $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$trayRepo/releases/latest" -UseBasicParsing -TimeoutSec 60 `
+        -Headers @{ 'User-Agent' = 'AdGuardHomeTray-manage'; 'Accept' = 'application/vnd.github+json' }
+    $cur = (Get-Item $trayExe).VersionInfo.FileVersion
+    $vc = Get-Ver $cur; $vl = Get-Ver $rel.tag_name
+    Log "tray: current=$cur latest=$($rel.tag_name)"
+    if (-not $vc -or -not $vl) { throw "tray version parse failed (current='$cur', latest='$($rel.tag_name)')" }
+    Set-Setting TrayLatestVersion ([string]$vl)
+    if ($vl -le $vc) { return 2 }
+
+    $prefix = "https://github.com/$trayRepo/releases/download/"
+    $zipAsset = $rel.assets | Where-Object { $_.name -eq 'AdGuardHomeTray.zip' } | Select-Object -First 1
+    $sumAsset = $rel.assets | Where-Object { $_.name -eq 'AdGuardHomeTray.zip.sha256' } | Select-Object -First 1
+    if (-not $zipAsset -or -not $sumAsset) { throw 'tray: release has no AdGuardHomeTray.zip / .sha256' }
+    foreach ($a in $zipAsset, $sumAsset) {
+        if (-not $a.browser_download_url.StartsWith($prefix)) { throw "tray: unexpected download URL $($a.browser_download_url)" }
+    }
+
+    $work = Join-Path $env:ProgramData ('AdGuardHome\update\' + [guid]::NewGuid())
+    New-Item -ItemType Directory -Force $work | Out-Null
+    try {
+        $zip = Join-Path $work 'AdGuardHomeTray.zip'
+        Invoke-WebRequest $zipAsset.browser_download_url -OutFile $zip -UseBasicParsing -TimeoutSec 300
+        $sum = (Invoke-WebRequest $sumAsset.browser_download_url -UseBasicParsing -TimeoutSec 60).Content
+        if ($sum -is [byte[]]) { $sum = [Text.Encoding]::ASCII.GetString($sum) }
+        $expected = ($sum.Trim() -split '\s+')[0]
+        $actual = (Get-FileHash $zip -Algorithm SHA256).Hash
+        if (-not $expected -or $actual -ne $expected.Trim()) { throw "tray: SHA-256 mismatch (expected=$expected actual=$actual)" }
+
+        Expand-Archive $zip (Join-Path $work 'x')
+        $pkg = Join-Path $work 'x\AdGuardHomeTray'
+        $newExe = Join-Path $pkg 'build\AdGuardHomeTray.exe'
+        if (-not (Test-Path $newExe) -or -not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw 'tray: unexpected package layout' }
+        if ((Get-Ver (Get-Item $newExe).VersionInfo.FileVersion) -ne $vl) { throw 'tray: package version does not match the release' }
+
+        # 新しい版の install.ps1 で入れ替える。動いているトレイは止めず、新しい exe に気づいて自分で再起動する
+        Enter-Maintenance 'TrayUpdate'
+        try {
+            $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pkg 'install.ps1') -SelfUpdate -InstallDir $aghDir -TrayDir $trayDir 2>&1 | Out-String
+            $code = $LASTEXITCODE
+        } finally { Exit-Maintenance }
+        if ($code -ne 0) { throw ("tray: install.ps1 failed ($code): " + $out.Trim()) }
+        Log "tray updated to $vl"
+        return 0
+    } finally {
+        Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# AdGuard Home とトレイアプリを、それぞれ独立に更新する（片方が失敗してももう片方は進める）。
+# 結果は settings.json に記録し、トレイは連続して失敗したときだけ通知する。0=どれか更新した, 2=どちらも最新, 1=失敗あり
+function Invoke-Update([bool]$respectSetting) {
+    if ($respectSetting -and (Get-Settings).AutoUpdate -ne 1) { Log 'auto update is disabled; skip'; return 2 }
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $codes = @(); $errors = @()
+    foreach ($step in @(@{ Name = 'AdGuard Home'; Run = { Invoke-AghUpdate } }, @{ Name = 'tray'; Run = { Invoke-TrayUpdate } })) {
+        try { $codes += [int](& $step.Run | Select-Object -Last 1) }
+        catch { $codes += 1; $errors += "$($step.Name): $($_.Exception.Message)"; Log ("ERROR: {0}: {1}" -f $step.Name, $_.Exception.Message) }
+    }
+    Set-Setting LastUpdateCheck ((Get-Date).ToUniversalTime().ToString('o'))
+    if ($errors) {
+        Set-Setting UpdateFailures ([int]((Get-Settings).UpdateFailures) + 1)
+        Set-Setting LastUpdateError ($errors -join ' / ')
+        return 1
+    }
+    Set-Setting UpdateFailures 0
+    Set-Setting LastUpdateError ''
+    if ($codes -contains 0) { return 0 }
+    Log 'already up to date'
+    return 2
 }
 
 try {

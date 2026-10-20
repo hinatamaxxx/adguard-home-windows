@@ -77,7 +77,7 @@ if (Get-Service AdGuardHome -ErrorAction SilentlyContinue) {
     & (Join-Path $dir 'AdGuardHome.exe') -s uninstall
     Pop-Location
 }
-Unregister-ScheduledTask -TaskName 'AdGuardHome AutoUpdate' -Confirm:$false -ErrorAction SilentlyContinue
+foreach ($t in 'AdGuardHome AutoUpdate', 'AdGuardHome UpdateNow') { Unregister-ScheduledTask -TaskName $t -Confirm:$false -ErrorAction SilentlyContinue }
 # 旧版が使っていたレジストリ（現行版は作らないが、残っていれば消す）
 Remove-Item 'HKLM:\SOFTWARE\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item 'HKCU:\Software\AdGuardHomeTray' -Recurse -Force -ErrorAction SilentlyContinue

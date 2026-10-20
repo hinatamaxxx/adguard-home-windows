@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("AdGuard Home を通知領域から管理")]
 [assembly: AssemblyCompany("個人用ツール")]
 [assembly: AssemblyProduct("AdGuard Home Tray")]
-[assembly: AssemblyVersion("1.6.0.0")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]
+[assembly: AssemblyFileVersion("1.7.0.0")]
 
 namespace AdGuardHomeTray
 {
@@ -108,7 +108,7 @@ namespace AdGuardHomeTray
         readonly NotifyIcon tray;
         readonly ContextMenu menu;
         readonly MenuItem miStatus, miState, miNewVersion, miOpen, miStart, miStop, miRestart;
-        readonly MenuItem miCheck, miUpdateNow, miAutoUpdate, miAutoStart;
+        readonly MenuItem miAghVersion, miAppVersion, miUpdateNow, miAutoUpdate, miAutoStart;
         readonly MenuItem miProtection, miDns, miPages, miLogin, miLogout, miExit;
         readonly System.Windows.Forms.Timer statusTimer, updateTimer, apiTimer;
         readonly AghApi api = new AghApi();
@@ -122,7 +122,6 @@ namespace AdGuardHomeTray
         bool firstPoll = true;
         string currentVersion = "";
         string latestVersion = "";
-        bool notifiedLatest;
 
         public TrayContext(bool openDashboardOnStart)
         {
@@ -152,11 +151,13 @@ namespace AdGuardHomeTray
             miStop = new MenuItem("AdGuard Home を停止…", delegate { ConfirmStop(); });
             miRestart = new MenuItem("AdGuard Home を再起動", delegate { RunManage("Restart"); });
 
-            miCheck = new MenuItem("更新を確認", delegate { CheckUpdateAsync(true); });
-            miUpdateNow = new MenuItem("今すぐ更新", delegate { RunManage("Update"); });
-            miAutoUpdate = new MenuItem("自動更新（毎日）", delegate { ToggleAutoUpdate(); });
+            // アップデート: 何の版かを名前で示す（AdGuard Home 本体とこのアプリ）。自動更新は両方に効く 1 つのスイッチ
+            miAghVersion = new MenuItem("AdGuard Home") { Enabled = false };
+            miAppVersion = new MenuItem("このアプリ") { Enabled = false };
+            miUpdateNow = new MenuItem("今すぐ確認して更新", delegate { UpdateNow(); });
+            miAutoUpdate = new MenuItem("自動で更新する（毎日）", delegate { ToggleAutoUpdate(); });
             var miUpdate = new MenuItem("アップデート");
-            miUpdate.MenuItems.AddRange(new MenuItem[] { miCheck, miUpdateNow, new MenuItem("-"), miAutoUpdate });
+            miUpdate.MenuItems.AddRange(new MenuItem[] { miAghVersion, miAppVersion, new MenuItem("-"), miUpdateNow, miAutoUpdate });
 
             miAutoStart = new MenuItem("Windows 起動時に自動起動", delegate { ToggleAutoStart(); });
             // 終了はメインメニューの最後に常に表示する（見つからないと不安になるため）。
@@ -218,17 +219,17 @@ namespace AdGuardHomeTray
             statusTimer.Start();
 
             updateTimer = new System.Windows.Forms.Timer { Interval = 6 * 60 * 60 * 1000 };
-            updateTimer.Tick += delegate { CheckUpdateAsync(false); };
+            updateTimer.Tick += delegate { CheckUpdateAsync(); };
             updateTimer.Start();
 
             apiTimer = new System.Windows.Forms.Timer { Interval = 60 * 1000 };
-            apiTimer.Tick += delegate { bool svgChanged = File.Exists(LogoSvgFile) ? File.GetLastWriteTimeUtc(LogoSvgFile) != logoSvgStamp : logoSvgStamp != DateTime.MinValue; if (RefreshLogo() | svgChanged) RebuildIcons(); RefreshApiAsync(); FetchFilterStatus(); RefreshCurrentVersionAsync(); };
+            apiTimer.Tick += delegate { bool svgChanged = File.Exists(LogoSvgFile) ? File.GetLastWriteTimeUtc(LogoSvgFile) != logoSvgStamp : logoSvgStamp != DateTime.MinValue; if (RefreshLogo() | svgChanged) RebuildIcons(); RefreshApiAsync(); FetchFilterStatus(); RefreshCurrentVersionAsync(); CheckSelfUpdated(); CheckUpdateFailures(); };
             apiTimer.Start();
 
             PollStatus();
             RefreshCurrentVersionAsync();
             RefreshApiAsync();
-            CheckUpdateAsync(false);
+            CheckUpdateAsync();
 
             // 2 つ目の起動（--dashboard）から合図を受けたら管理画面を開く
             var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Program.ShowDashboardEvent);
@@ -314,7 +315,8 @@ namespace AdGuardHomeTray
             else if (lastStatus == ServiceControllerStatus.Stopped) { text = "停止中"; icon = icoStopped; }
             else { text = StatusText(lastStatus.Value); icon = icoStopped; }
 
-            bool upd = IsUpdateAvailable();
+            string pending = PendingUpdateText();   // 自動更新オフで新しい版があるときだけ
+            bool upd = pending != null;
             if (running && protectionEnabled == false) { icon = icoStopped; text = "実行中（保護オフ）"; }
             else if (upd && running) icon = icoUpdate;
 
@@ -327,12 +329,12 @@ namespace AdGuardHomeTray
             else state = "動作中";
             miStatus.Text = "AdGuard Home" + (currentVersion == "" ? "" : " " + currentVersion);
             miState.Text = state;
-            miNewVersion.Text = upd ? "新しいバージョン " + latestVersion + " があります" : "";
+            miNewVersion.Text = pending ?? "";
             miNewVersion.Visible = upd;
             miStart.Enabled = lastStatus != null && !running;
             miStop.Enabled = running;
             miRestart.Enabled = running;
-            miUpdateNow.Text = upd ? "今すぐ " + latestVersion + " に更新" : "今すぐ更新";
+            UpdateVersionItems();
             miExit.Enabled = CanExit;
             UpdateTooltip();
             if (tray.Icon != icon) tray.Icon = icon;
@@ -385,7 +387,6 @@ namespace AdGuardHomeTray
         void RefreshCurrentVersionAsync()
         {
             string v = ReadSetting("Version") ?? "";
-            if (v != currentVersion && currentVersion != "") notifiedLatest = false;   // 更新されたら、次の新しい版はまた知らせる
             currentVersion = v;
             UpdateVisuals();
         }
@@ -401,53 +402,6 @@ namespace AdGuardHomeTray
                 return string.IsNullOrEmpty(s) ? null : s;
             }
             catch { return null; }
-        }
-
-        void CheckUpdateAsync(bool interactive)
-        {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                string latest = null;
-                string error = null;
-                try
-                {
-                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                    using (var wc = new WebClient())
-                    {
-                        wc.Headers[HttpRequestHeader.UserAgent] = "AdGuardHomeTray/1.0";
-                        string json = wc.DownloadString(VersionUrl);
-                        var m = Regex.Match(json, "\"version\"\\s*:\\s*\"([^\"]+)\"");
-                        if (m.Success) latest = m.Groups[1].Value;
-                    }
-                }
-                catch (Exception ex) { error = ex.Message; }
-
-                Post(delegate
-                {
-                    if (latest != null) latestVersion = latest;
-                    UpdateVisuals();
-                    if (error != null)
-                    {
-                        if (interactive) ShowBalloon(5000, "AdGuard Home", "更新の確認に失敗しました: " + error, ToolTipIcon.Error);
-                        return;
-                    }
-                    if (IsUpdateAvailable())
-                    {
-                        if (interactive || !notifiedLatest)
-                        {
-                            string msg = IsAutoUpdateEnabled()
-                                ? "新しいバージョン " + latestVersion + " があります。自動更新で適用されます。クリックすると今すぐ更新します。"
-                                : "新しいバージョン " + latestVersion + " があります。クリックで更新します。";
-                            ShowBalloon(8000, "AdGuard Home の更新", msg, ToolTipIcon.Info, delegate { RunManage("Update"); });
-                            notifiedLatest = true;
-                        }
-                    }
-                    else if (interactive)
-                    {
-                        ShowBalloon(4000, "AdGuard Home", "最新バージョンです（" + (currentVersion == "" ? latestVersion : currentVersion) + "）。", ToolTipIcon.Info);
-                    }
-                });
-            });
         }
 
         // ---------- 操作 ----------
@@ -579,7 +533,6 @@ namespace AdGuardHomeTray
                 if (code == 0) ShowBalloon(5000, "AdGuard Home", "更新処理が完了しました。", ToolTipIcon.Info, null, 0);   // 版の再取得前でも「更新あり」にしない
                 else if (code == 2) ShowBalloon(5000, "AdGuard Home", "すでに最新バージョンです。", ToolTipIcon.Info);
                 else ShowBalloon(5000, "AdGuard Home", "更新に失敗しました。ログ（manage.log）を確認してください。", ToolTipIcon.Error);
-                notifiedLatest = false;
                 RefreshCurrentVersionAsync();
             }
             RefreshMenuChecks();

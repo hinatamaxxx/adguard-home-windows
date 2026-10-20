@@ -182,7 +182,6 @@ namespace AdGuardHomeTray
             this.kind = kind;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             AutoSize = false;
-            Cursor = Cursors.Hand;
         }
 
         protected override void OnTextChanged(EventArgs e)
@@ -197,7 +196,7 @@ namespace AdGuardHomeTray
         protected override void OnMouseLeave(EventArgs e) { hover = false; down = false; Invalidate(); base.OnMouseLeave(e); }
         protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left) { down = true; Invalidate(); } base.OnMouseDown(e); }
         protected override void OnMouseUp(MouseEventArgs e) { down = false; Invalidate(); base.OnMouseUp(e); }
-        protected override void OnEnabledChanged(EventArgs e) { Cursor = Enabled ? Cursors.Hand : Cursors.Default; Invalidate(); base.OnEnabledChanged(e); }
+        protected override void OnEnabledChanged(EventArgs e) { Invalidate(); base.OnEnabledChanged(e); }
 
         static Color Shade(Color c, float f)
         {
@@ -274,7 +273,6 @@ namespace AdGuardHomeTray
             p = palette;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             AutoSize = true;
-            Cursor = Cursors.Hand;
         }
 
         int Box { get { return ModernDialog.Px(18); } }

@@ -1,6 +1,6 @@
 # AdGuard Home Tray for Windows
 
-> **English summary:** Run the official AdGuard Home as a Windows service and manage it from a tray icon (status, pause protection, updates, a dedicated dashboard window). Includes a one-click setup, automatic updates, and a script to use it from iOS outside your home via Tailscale Funnel. The easiest way to install is to give this repository URL to an AI coding agent (Claude Code / Codex) and ask it to set it up — see [AGENTS.md](AGENTS.md). Documentation is in Japanese. Not affiliated with AdGuard.
+> **English summary:** Run the official AdGuard Home as a Windows service and manage it from a tray icon (status, pause protection, updates, a dedicated dashboard window). Includes a one-click setup, automatic updates, and a script to use it from iOS outside your home via Tailscale Funnel. The easiest way to install is to give this repository URL to an AI coding agent (Claude Code / Codex) and ask it to set it up — see [AGENTS.md](AGENTS.md). Documentation is in Japanese. Not affiliated with AdGuard. Provided as-is; issues, bug reports and support requests are not accepted.
 
 公式の [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) を Windows サービスとして動かし、通知領域（タスクトレイ）のアイコンから状態の確認・保護の一時停止・更新・管理画面の表示ができるようにするセットアップ一式です。コンソール画面を出しっぱなしにする必要はなく、PC の起動時に自動で動きます。
 
@@ -188,6 +188,10 @@ Windows の「スタートアップ」でオン/オフを切り替えると、Wi
 - Funnel を使う場合は、管理画面で HTTPS 証明書を有効にし、初回の `tailscale funnel` 実行時に表示されるリンクから Funnel を有効化する
 - Funnel の設定は PowerShell から実行する（Git Bash では `/dns-query/...` のパスが書き換えられてしまう）
 - ファイアウォールで AdGuard Home の受信（UDP/TCP 53）を許可する（Tailscale は「プライベート」扱い）
+
+## サポートについて
+
+このプロジェクトは個人用に作ったものを、現状のまま公開しています。不具合や脆弱性の報告、質問、要望は受け付けていません。使う場合は自己責任でお願いします（[LICENSE](LICENSE) の免責のとおり）。
 
 ## ライセンスと商標
 

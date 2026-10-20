@@ -6,15 +6,9 @@ This setup kit runs the official [AdGuard Home](https://github.com/AdguardTeam/A
 
 ## Quick install
 
-**Use the installer (easiest)**
+**Use one PowerShell command (easiest)**
 
-Download and run [AdGuardHomeSetup.exe](https://github.com/hinatamaxxx/adguard-home-windows/releases/latest/download/AdGuardHomeSetup.exe). It always downloads the latest version from the internet, checks its SHA-256, and opens the setup window. Click **Install**. Choose **Yes** when Windows asks "Do you want to allow this app to make changes to your device?"
-
-> The app is not signed. The first time you run it, Windows may show "Windows protected your PC". If this happens, choose **More info**, then **Run anyway**.
-
-**Use one PowerShell command**
-
-Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. The command runs [get.ps1](get.ps1), which does the same thing as the installer.
+Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. The command runs [get.ps1](get.ps1), which downloads the latest release, checks its SHA-256, and opens the setup window. Click **Install**. Choose **Yes** when Windows asks "Do you want to allow this app to make changes to your device?"
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -160,14 +154,20 @@ Updates ▸
 - Before updating this app, the updater checks `AdGuardHomeTray.zip` against `AdGuardHomeTray.zip.sha256` from the same release in this repository. It then replaces the files. The tray app keeps running. When it detects the new version, it restarts itself after you close any open window, such as the dashboard
 - The log is in `C:\ProgramData\AdGuardHome\logs\manage.log`
 
+## Icons
+
+The AdGuard logo is a trademark of AdGuard, so it is not included in what this project distributes (this repository and the release ZIP). The icon built into the exe is the app's own shield. After installation, the logo is taken from the dashboard of your installed AdGuard Home and used for:
+
+- The notification area icon (drawn by the tray app while it runs)
+- The **AdGuard Home** icon in the Start menu and in **Installed apps** (`manage.ps1` has the tray app draw `C:\ProgramData\AdGuardHome\AdGuardHome-<mark>.ico` and points the shortcut and the entry to it; it is redrawn when the logo is taken and after each update)
+
 ## Display language
 
 The app uses Japanese if your Windows display language is Japanese. Otherwise, it uses English. To choose a language for testing, set the environment variable `ADGUARD_TRAY_LANG` to `ja` or `en` before starting the tray app.
 
 ## Files
 
-- `setup/Bootstrapper.cs`: the installer `AdGuardHomeSetup.exe`. It downloads the latest release, checks its SHA-256, and opens the setup window
-- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It does the same thing as the installer
+- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It downloads the latest release ZIP, checks its SHA-256, and opens the setup window
 - `src/AdGuardHomeTray.cs`: the tray app, built with the .NET Framework 4.x `csc.exe`
 - `src/L10n.cs`: display language (Japanese and English)
 - `src/DashboardForm.cs`: the separate dashboard window (WebView2) / `src/Theme.cs`: light and dark themes
@@ -176,13 +176,13 @@ The app uses Japanese if your Windows display language is Japanese. Otherwise, i
 - `src/TrayContext.Update.cs`: shows versions, runs updates now, reports automatic update failures, and restarts the app after an update
 - `src/TrayContext.SubmenuUp.cs`: opens submenus upward from the parent item
 - `lib/webview2/`: WebView2 SDK (Microsoft.Web.WebView2 1.0.4258.31 from nuget.org; Microsoft signature verified)
-- `build.ps1`: builds `build\AdGuardHomeTray.exe` and `build\AdGuardHomeSetup.exe`
+- `build.ps1`: builds `build\AdGuardHomeTray.exe`
 - `scripts/manage.ps1`: controls the service and runs updates as administrator or SYSTEM
 - `scripts/configure-adguard.ps1`: changes AdGuard Home settings. `-EnableFunnelDoH` accepts DoH through Funnel. `-Faster` makes it faster. The script checks the result before applying it and makes a backup
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: creates a DNS profile for iOS / registers a device name
 - `AGENTS.md` (loaded from `CLAUDE.md`): installation steps for AI agents
 - `Setup.cmd`: opens the setup window (`build\AdGuardHomeTray.exe --setup`)
-- `install.ps1`: the installer itself. It runs as administrator and is called through UAC from the setup window
+- `install.ps1`: the install script. It runs as administrator and is called through UAC from the setup window
 - `uninstall.ps1`: removes the app. You can run it from **AdGuard Home for Windows** in Windows **Settings > Apps > Installed apps**. It asks for administrator permission automatically. By default, it also deletes all settings and data. To keep them, check "Keep settings and data" in the confirmation. Use `-Quiet` to skip the confirmation and `-KeepSettings` to keep settings and data
 
 ## Registry keys and files that change
@@ -205,7 +205,7 @@ When you turn startup on or off in Windows **Startup** settings, Windows writes 
 | `C:\Program Files\AdGuardHome\AdGuardHome.exe` | AdGuard Home | Deleted |
 | `C:\Program Files\AdGuardHome\AdGuardHome.yaml`, `data\` | Settings and data created by AdGuard Home | Deleted unless you choose "Keep settings and data" |
 | `C:\Program Files\AdGuardHome Tray\` | The tray app, `manage.ps1`, and `uninstall.ps1` | Deleted |
-| `C:\ProgramData\AdGuardHome\` (`settings.json`, `logs\`, and `maintenance.json` only during updates) | Shared settings and logs | Deleted |
+| `C:\ProgramData\AdGuardHome\` (`settings.json`, `logs\`, the logo files `logo.svg` and `logo.png`, the icon `AdGuardHome-*.ico`, and `maintenance.json` only during updates) | Shared settings, logs, and the logo | Deleted |
 | `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\AdGuard Home.lnk` | **AdGuard Home** in the Start menu; opens the dashboard | Deleted |
 | Task Scheduler `AdGuardHome AutoUpdate`, `AdGuardHome UpdateNow` | Records info, runs automatic updates, and runs updates now | Deleted |
 | `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AdGuard Home.lnk` | Starts the app with Windows, if turned on | Deleted |

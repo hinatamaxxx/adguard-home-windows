@@ -2,9 +2,7 @@ AdGuard Home を Windows サービスとして動かし、通知領域のアイ�
 
 ## 入れ方
 
-下の `AdGuardHomeSetup.exe` をダウンロードして実行します。毎回ネットから最新版を取得し、SHA-256 を照合してからセットアップ画面を開きます（署名のないアプリなので、「Windows によって PC が保護されました」と出たら「詳細情報」→「実行」を選んでください）。
-
-PowerShell に次を貼り付けて Enter を押しても、同じように入れられます（管理者でなくてかまいません）。
+PowerShell に次を貼り付けて Enter を押します（管理者でなくてかまいません）。最新版を SHA-256 で照合してから、セットアップ画面を開きます。
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -24,9 +22,8 @@ irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.
 
 ## 添付ファイル
 
-- `AdGuardHomeSetup.exe`: インストーラー（最新版を取得してセットアップ画面を開く）
 - `AdGuardHomeTray.zip`: ビルド済みのセットアップ一式
-- `AdGuardHomeTray.zip.sha256`: 上の ZIP の SHA-256（自動更新、インストーラー、`get.ps1` が照合に使う）
+- `AdGuardHomeTray.zip.sha256`: 上の ZIP の SHA-256（自動更新と `get.ps1` が照合に使う）
 
 AdGuard Home 本体は含みません。セットアップ時に AdGuard 公式の配布元から取得し、署名を確認してから入れます。不具合の報告やサポートは受け付けていません（[LICENSE](https://github.com/hinatamaxxx/adguard-home-windows/blob/main/LICENSE) のとおり、現状のまま提供します）。
 
@@ -36,7 +33,7 @@ AdGuard Home 本体は含みません。セットアップ時に AdGuard 公式�
 
 A setup kit that runs AdGuard Home as a Windows service and lets you manage it from a notification area icon (not affiliated with AdGuard).
 
-**Install:** download and run `AdGuardHomeSetup.exe` below. It always downloads the latest version, checks its SHA-256, and opens the setup window. The app is not signed, so if Windows shows "Windows protected your PC", choose "More info" and then "Run anyway". You can also paste this into PowerShell:
+**Install:** paste this into PowerShell. It checks the SHA-256 of the latest version and opens the setup window:
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex

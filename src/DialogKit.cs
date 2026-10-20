@@ -184,6 +184,7 @@ namespace AdGuardHomeTray
             this.kind = kind;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             AutoSize = false;
+            AccessibleRole = AccessibleRole.PushButton;   // 自分で描いても、読み上げソフトや UI オートメーションからはボタンとして扱う
         }
 
         protected override void OnTextChanged(EventArgs e)
@@ -275,6 +276,7 @@ namespace AdGuardHomeTray
             p = palette;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             AutoSize = true;
+            AccessibleRole = AccessibleRole.CheckButton;
         }
 
         int Box { get { return ModernDialog.Px(18); } }

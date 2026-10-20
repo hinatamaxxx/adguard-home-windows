@@ -12,11 +12,18 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-# 表示の言語（Windows の表示言語が日本語なら日本語、それ以外は英語）
 # Windows の表示言語（PowerShell 自体の設定に左右されないよう、OS に直接たずねる）
 try { $ja = (((Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern ushort GetUserDefaultUILanguage();' -Name UiLanguage -Namespace AdGuardHomeSetup -PassThru)::GetUserDefaultUILanguage()) -band 0x3FF) -eq 0x11 } catch { $ja = (Get-UICulture).TwoLetterISOLanguageName -eq 'ja' }
 function T([string]$jaText, [string]$enText) { if ($ja) { $jaText } else { $enText } }
+# 進み具合。get.ps1（UAC で別のプロセスとして起動した側）が読んで表示する
+function Step([string]$jaText, [string]$enText) {
+    $line = T $jaText $enText
+    Write-Host $line
+    try { [IO.File]::AppendAllText($progressFile, $line + "`r`n", (New-Object Text.UTF8Encoding $false)) } catch { }
+}
 $root = $PSScriptRoot
+$progressFile = Join-Path $root 'progress.log'
+Remove-Item $progressFile -Force -ErrorAction SilentlyContinue
 Start-Transcript -Path (Join-Path $root 'install.log') -Force | Out-Null
 
 # トレイと manage.ps1 の共有設定（manage.ps1 と同じ形式）。レジストリには保存しない
@@ -124,6 +131,7 @@ try {
     $logDir = Join-Path $dataDir 'logs'
     New-Item -ItemType Directory -Force $InstallDir, $TrayDir, $logDir | Out-Null
 
+    Step 'フォルダーと権限を準備しています' 'Preparing folders and permissions'
     # ProgramData\AdGuardHome は SYSTEM・管理者が書き、ユーザーは読み取りのみ（既定の継承では Users に書き込みが付くため外す）
     & icacls.exe $dataDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)RX' /Q | Out-Null
     if ($LASTEXITCODE) { throw ((T "フォルダーの権限設定に失敗しました" "Could not set folder permissions") + " ($LASTEXITCODE)") }
@@ -142,6 +150,7 @@ try {
     $exe = Join-Path $InstallDir 'AdGuardHome.exe'
     $agLog = Join-Path $logDir 'AdGuardHome.log'
 
+    Step 'AdGuard Home を確認しています（初めてのときは公式の配布元からダウンロードします）' 'Checking AdGuard Home (downloading it from the official servers the first time)'
     # 本体（未導入時のみ。導入後の更新は AdGuard Home 自身のアップデーターに任せる）
     if (-not (Test-Path $exe)) {
         if (-not $AdGuardExe) {
@@ -158,6 +167,7 @@ try {
             [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $tmp 'x'))
             $AdGuardExe = Join-Path $tmp 'x\AdGuardHome\AdGuardHome.exe'
         }
+        Step 'AdGuard Home の署名を確認しています' 'Verifying the AdGuard Home signature'
         $sig = Get-AuthenticodeSignature $AdGuardExe
         if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'O=Adguard Software Limited') {
             throw ((T "AdGuardHome.exe の署名を確認できません: " "Could not verify the signature of AdGuardHome.exe: ") + $sig.Status)
@@ -165,6 +175,7 @@ try {
         Copy-Item $AdGuardExe $InstallDir -Force
     }
 
+    Step 'AdGuard Home を Windows のサービスとして登録・起動しています' 'Registering and starting AdGuard Home as a Windows service'
     # サービス登録。ログを ProgramData に出すよう引数を揃える（既存の登録が異なる場合は作り直す）
     $svcKey = 'HKLM:\SYSTEM\CurrentControlSet\Services\AdGuardHome'
     $imagePath = (Get-ItemProperty $svcKey -Name ImagePath -ErrorAction SilentlyContinue).ImagePath
@@ -183,6 +194,7 @@ try {
     & sc.exe failure AdGuardHome reset= 86400 actions= restart/5000/restart/10000/restart/60000 | Out-Null
     if ((Get-Service AdGuardHome).Status -ne 'Running') { Start-Service AdGuardHome }
 
+    Step 'トレイアプリと管理スクリプトを配置しています' 'Copying the tray app and management scripts'
     # トレイアプリと管理スクリプト
     Get-ChildItem $TrayDir -Filter '*.old-*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     Copy-Replace (Join-Path $root 'build\AdGuardHomeTray.exe') $TrayDir
@@ -196,6 +208,7 @@ try {
     Set-Setting InstallDir $InstallDir
     Set-Setting TrayDir $TrayDir
 
+    Step '自動更新のタスクを登録しています' 'Registering the automatic update tasks'
     # 情報更新 + 自動更新タスク
     $manage = Join-Path $TrayDir 'manage.ps1'
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
@@ -221,6 +234,7 @@ try {
     }
 
 
+    Step 'スタートメニューと「インストールされているアプリ」に登録しています' 'Adding to the Start menu and Installed apps'
     # スタートメニュー: 「AdGuard Home」1 つだけ（管理画面を開く。トレイが動いていなければ起動してから開く）
     $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
     $trayExe = Join-Path $TrayDir 'AdGuardHomeTray.exe'
@@ -253,6 +267,7 @@ try {
     Set-ItemProperty $uninstallKey -Name NoModify -Value 1 -Type DWord
     Set-ItemProperty $uninstallKey -Name NoRepair -Value 1 -Type DWord
 
+    Step 'ロゴとアイコンを準備しています' 'Preparing the logo and icons'
     # 初回の情報記録。手元の AdGuard Home からロゴを取れたら、スタートメニューと上の登録のアイコンもそのロゴにする
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $manage -Action Refresh
 

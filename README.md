@@ -8,7 +8,7 @@
 
 **コマンド 1 行で入れる**
 
-PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。「このアプリがデバイスに変更を加えることを許可しますか？」と表示されたら「はい」を選んでください。最新のリリースをダウンロードして SHA-256 を照合し、画面を出さずにインストールして、ログオン時の自動起動を設定し、トレイアプリを起動します（中身は [get.ps1](get.ps1)）。
+PowerShell（スタートボタンを右クリック →「ターミナル」）に次を貼り付けて Enter を押します。管理者として開く必要はありません。「このアプリがデバイスに変更を加えることを許可しますか？」と表示されたら「はい」を選んでください。最新のリリースをダウンロードして SHA-256 を照合し、インストールの進み具合をこの画面に表示しながらインストールし、ログオン時の自動起動を設定します。終わると完了の画面が出て、「AdGuard Home を起動して、初期設定の画面を開く」（既定でオン）のまま「完了」を押すと、初期設定の画面が開きます（中身は [get.ps1](get.ps1)）。
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -137,7 +137,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 ```
 アップデート ▸
   AdGuard Home v0.107.79（最新です）
-  このアプリ v1.8.4（最新です）
+  このアプリ v1.8.5（最新です）
   ─────────────
   今すぐ確認して更新
   ✓ 自動で更新する（毎日）
@@ -146,7 +146,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 - **自動で更新する（既定でオン）**: SYSTEM 権限のタスクが毎日（と起動時・ログオン時）、AdGuard Home は公式のアップデーターで、このアプリは GitHub Releases の最新版で更新します。UAC の確認は出ません。成功しても通知はしません（メニューのバージョンの表示で分かります）。続けて 2 回失敗したときだけ通知します
 - **今すぐ確認して更新**: 同じ処理をすぐに実行します（UAC なし）。押したときは結果を通知します
 - 自動更新をオフにしている場合だけ、新しいバージョンが出たときに通知し、アイコンを橙にします（通知をクリックすると更新します）
-- このアプリの更新ではこのリポジトリのリリースにある `AdGuardHomeTray.zip` を、同じリリースの `AdGuardHomeTray.zip.sha256` と照合してから入れ替えます。動いているトレイは止めず、新しいバージョンに入れ替わったことに気づくと自分で再起動します（管理画面などを開いているときは、閉じてから）
+- このアプリの更新ではこのリポジトリのリリースにある `adguard-home-windows.zip` を、同じリリースの `adguard-home-windows.zip.sha256` と照合してから入れ替えます。動いているトレイは止めず、新しいバージョンに入れ替わったことに気づくと自分で再起動します（管理画面などを開いているときは、閉じてから）
 - 記録は `C:\ProgramData\AdGuardHome\logs\manage.log` にあります
 
 ## アイコン
@@ -162,11 +162,11 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 
 ## ファイル
 
-- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。最新のリリースの ZIP を SHA-256 で照合し、画面を出さずにインストールする
+- `get.ps1`: コマンド 1 行での導入用（`irm … | iex` で読み込むため、BOM なしの UTF-8）。最新のリリースの ZIP を SHA-256 で照合し、進み具合を表示しながらインストールして、最後に完了の画面を出す
 - `src/AdGuardHomeTray.cs`: トレイアプリ（.NET Framework 4.x の `csc.exe` でビルド）
 - `src/L10n.cs`: 表示の言語（日本語・英語）
 - `src/DashboardForm.cs`: 管理画面の専用ウィンドウ（WebView2） / `src/Theme.cs`: ライト/ダーク対応
-- `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風） / `src/UninstallDialog.cs`・`src/ExitDialog.cs`・`src/StopDialog.cs`: アンインストール・終了・停止の画面
+- `src/DialogKit.cs`: 確認画面の共通部品（Windows 11 風） / `src/StepsDialogs.cs`・`src/ExitDialog.cs`・`src/StopDialog.cs`: インストール完了・アンインストール（進み具合）・終了・停止の画面
 - `src/TrayContext.MenuHover.cs`: メニュー項目にマウスを乗せたときの説明
 - `src/TrayContext.Update.cs`: バージョンの表示、今すぐ更新、自動更新の失敗の通知、更新後の自動再起動
 - `src/TrayContext.SubmenuUp.cs`: 子メニューを親の項目より上に向かって開く
@@ -177,7 +177,7 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: iOS 用の DNS プロファイルの作成 / 端末名の登録
 - `AGENTS.md`（`CLAUDE.md` から読み込む）: AI エージェント向けの導入手順
 - `install.ps1`: インストールの本体（管理者で実行。`get.ps1` から UAC で呼ばれる）
-- `uninstall.ps1`: アンインストール（Windows の「設定 → アプリ → インストールされているアプリ」の「AdGuard Home for Windows」から実行できる。自動で管理者に昇格する。既定で設定とデータもすべて削除し、確認画面の「設定とデータを残す」にチェックを入れたときだけ残す。確認なしで実行するには `-Quiet`、残すには `-KeepSettings`）
+- `uninstall.ps1`: アンインストール（Windows の「設定 → アプリ → インストールされているアプリ」の「AdGuard Home for Windows」から実行できる。自動で管理者に昇格する。既定で設定とデータもすべて削除し、確認画面の「設定とデータを残す」にチェックを入れたときだけ残す。削除の進み具合と完了を同じ画面に表示する。確認なしで実行するには `-Quiet`、残すには `-KeepSettings`）
 
 ## 変更するレジストリとファイルの一覧
 

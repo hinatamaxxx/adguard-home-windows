@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.4.0")]
-[assembly: AssemblyFileVersion("1.8.4.0")]
+[assembly: AssemblyVersion("1.8.5.0")]
+[assembly: AssemblyFileVersion("1.8.5.0")]
 
 namespace AdGuardHomeTray
 {
@@ -40,12 +40,20 @@ namespace AdGuardHomeTray
         static int Main(string[] args)
         {
             SetCurrentProcessExplicitAppUserModelID(AppUserModelId);   // ウィンドウやトレイアイコンを作る前に
-            // アンインストールの確認画面だけを出して終了する（uninstall.ps1 から呼ばれる）
-            if (Array.Exists(args, a => string.Equals(a, "--uninstall-dialog", StringComparison.OrdinalIgnoreCase)))
+            // アンインストールの画面（確認・進み具合・完了）だけを出して終了する（uninstall.ps1 から --uninstall-ui <フォルダー> で呼ばれる）
+            int ui = Array.FindIndex(args, a => string.Equals(a, "--uninstall-ui", StringComparison.OrdinalIgnoreCase));
+            if (ui >= 0 && ui + 1 < args.Length)
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                return UninstallDialog.Run(Array.Exists(args, a => string.Equals(a, "--keep", StringComparison.OrdinalIgnoreCase)));
+                return UninstallFlow.Run(args[ui + 1], Array.Exists(args, a => string.Equals(a, "--keep", StringComparison.OrdinalIgnoreCase)));
+            }
+            // インストールの完了画面だけを出して終了する（get.ps1 から呼ばれる）
+            if (Array.Exists(args, a => string.Equals(a, "--install-finished", StringComparison.OrdinalIgnoreCase)))
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                return InstallFinishedDialog.Run();
             }
             // アイコンファイル（.ico）を書き出して終了する（manage.ps1 から呼ばれる）。手元の AdGuard Home から取得した
             // ロゴで描くので、スタートメニューや「インストールされているアプリ」に本物のロゴを、配布物に入れずに出せる

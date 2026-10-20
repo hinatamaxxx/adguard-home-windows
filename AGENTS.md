@@ -15,7 +15,7 @@
 ## 1. 基本の導入（この PC で使う）
 
 1. 前提を確認する: Windows 10/11 x64、`%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe` があること（.NET Framework 4.8。通常は標準で入っている）。
-2. PowerShell（管理者でなくてよい）で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex` を実行する。最新リリースの ZIP を SHA-256 で照合し、画面を出さずにインストールして、ログオン時の自動起動を設定し、トレイアプリを起動する。ユーザーには「『このアプリがデバイスに変更を加えることを許可しますか？』と出たら『はい』を押す」とだけ伝える。
+2. PowerShell（管理者でなくてよい）で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex` を実行する。最新リリースの ZIP を SHA-256 で照合し、進み具合を表示しながらインストールし、ログオン時の自動起動を設定して、完了の画面を出す。ユーザーには「『このアプリがデバイスに変更を加えることを許可しますか？』と出たら『はい』を押す。完了の画面で『完了』を押すと初期設定の画面が開く」と伝える。
 3. ソースから入れる場合は、リポジトリを取得して `build.ps1` を実行し、`install.ps1` を管理者で実行する（`Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "<repo>\install.ps1"'`）。
 4. AdGuard Home の初期設定（ユーザーが行う）: トレイアイコンをダブルクリックすると `http://127.0.0.1:3000/` の初期設定画面が開く。
    - 管理画面のポートは 80 のままでよい。DNS の待ち受けが「ポートが使用中」で失敗したら（WSL / Hyper-V の「インターネット接続の共有」が `0.0.0.0:53` を使っている場合）、`127.0.0.1` か LAN の IP を選ぶ。
@@ -65,4 +65,4 @@
 
 ## アンインストール
 
-Windows の「設定 → アプリ → インストールされているアプリ」で「AdGuard Home for Windows」をアンインストール。既定で設定・データもすべて削除する（確認画面で「設定とデータを残す」を選べる）。DNS をこの PC に向けた機器は、先に元に戻すようユーザーに伝える。
+Windows の「設定 → アプリ → インストールされているアプリ」で「AdGuard Home for Windows」をアンインストール。既定で設定・データもすべて削除する（確認画面で「設定とデータを残す」を選べる）。進み具合と完了は画面に出る。DNS をこの PC に向けた機器は、先に元に戻すようユーザーに伝える。

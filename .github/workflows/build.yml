@@ -40,15 +40,20 @@ jobs:
           Copy-Item Setup.cmd, install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
           Copy-Item scripts, lib, src -Destination "dist/$pkg/" -Recurse
           Compress-Archive -Path "dist/$pkg" -DestinationPath "dist/$pkg.zip" -Force
+          # 自己更新（manage.ps1）が照合する SHA-256
+          $hash = (Get-FileHash "dist/$pkg.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("dist/$pkg.zip.sha256", "$hash  $pkg.zip`n")
 
       - uses: actions/upload-artifact@v4
         with:
           name: AdGuardHomeTray
-          path: dist/AdGuardHomeTray.zip
+          path: |
+            dist/AdGuardHomeTray.zip
+            dist/AdGuardHomeTray.zip.sha256
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/AdGuardHomeTray.zip --title "${{ github.ref_name }}" --generate-notes
+        run: gh release create "${{ github.ref_name }}" dist/AdGuardHomeTray.zip dist/AdGuardHomeTray.zip.sha256 --title "${{ github.ref_name }}" --generate-notes

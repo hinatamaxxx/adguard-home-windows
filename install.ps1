@@ -7,7 +7,8 @@
 param(
     [string]$AdGuardExe,     # 検証済みの AdGuardHome.exe。未指定なら公式サイトから取得
     [string]$InstallDir = (Join-Path $env:ProgramFiles 'AdGuardHome'),
-    [string]$TrayDir = (Join-Path $env:ProgramFiles 'AdGuardHome Tray')
+    [string]$TrayDir = (Join-Path $env:ProgramFiles 'AdGuardHome Tray'),
+    [switch]$SelfUpdate      # manage.ps1（SYSTEM）からの自己更新。動いているトレイは止めず、既存のタスクは作り直さない
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,6 +35,26 @@ function Set-Setting([string]$name, $value) {
     $tmp = "$settingsFile.tmp"
     [IO.File]::WriteAllText($tmp, ($h | ConvertTo-Json), (New-Object Text.UTF8Encoding $false))
     Move-Item $tmp $settingsFile -Force
+}
+
+# 使用中のファイル（動いているトレイの exe・DLL）は上書きできないので、名前を変えてどかしてから置く。
+# どかした *.old-* は次回のインストール・更新で消す
+function Copy-Replace([string]$src, [string]$dstDir) {
+    foreach ($f in Get-Item $src) {
+        $dst = Join-Path $dstDir $f.Name
+        try { Copy-Item $f.FullName $dst -Force }
+        catch {
+            Move-Item $dst ("$dst.old-" + [DateTime]::Now.Ticks) -Force
+            Copy-Item $f.FullName $dst -Force
+        }
+    }
+}
+
+# タスクを、SYSTEM・管理者に加えて、ログオンした利用者（Authenticated Users）も実行できるようにする（UAC なしの「今すぐ更新」用）
+function Grant-TaskRun([string]$name) {
+    $svc = New-Object -ComObject Schedule.Service
+    $svc.Connect()
+    $svc.GetFolder('\').GetTask($name).SetSecurityDescriptor('D:(A;;FA;;;SY)(A;;FA;;;BA)(A;;GRGX;;;AU)', 0)
 }
 
 # ショートカットに AppUserModelID（System.AppUserModel.ID）を付ける
@@ -106,11 +127,14 @@ try {
     & icacls.exe $dataDir /setowner '*S-1-5-32-544' /T /C /Q | Out-Null
     & icacls.exe "$dataDir\*" /reset /T /C /Q | Out-Null
 
-    # インストール済みのトレイだけを止める（セットアップ画面も同じ名前の exe なので、名前だけで止めない）
-    $trayFull = [IO.Path]::GetFullPath($TrayDir).TrimEnd('\') + '\'
-    Get-Process AdGuardHomeTray -ErrorAction SilentlyContinue |
-        Where-Object { $_.Path -and $_.Path.StartsWith($trayFull, [StringComparison]::OrdinalIgnoreCase) } |
-        Stop-Process -Force
+    # インストール済みのトレイだけを止める（セットアップ画面も同じ名前の exe なので、名前だけで止めない）。
+    # 自己更新では止めない（SYSTEM からは利用者の画面に起動し直せないため。トレイが新しい exe に気づいて自分で再起動する）
+    if (-not $SelfUpdate) {
+        $trayFull = [IO.Path]::GetFullPath($TrayDir).TrimEnd('\') + '\'
+        Get-Process AdGuardHomeTray -ErrorAction SilentlyContinue |
+            Where-Object { $_.Path -and $_.Path.StartsWith($trayFull, [StringComparison]::OrdinalIgnoreCase) } |
+            Stop-Process -Force
+    }
 
     $exe = Join-Path $InstallDir 'AdGuardHome.exe'
     $agLog = Join-Path $logDir 'AdGuardHome.log'
@@ -152,12 +176,12 @@ try {
     if ((Get-Service AdGuardHome).Status -ne 'Running') { Start-Service AdGuardHome }
 
     # トレイアプリと管理スクリプト
-    Copy-Item (Join-Path $root 'build\AdGuardHomeTray.exe') $TrayDir -Force
+    Get-ChildItem $TrayDir -Filter '*.old-*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    Copy-Replace (Join-Path $root 'build\AdGuardHomeTray.exe') $TrayDir
     # 管理画面ウィンドウ用の WebView2 SDK（同梱。描画するランタイムは Windows が自動更新する）
-    Copy-Item (Join-Path $root 'lib\webview2\*.dll') $TrayDir -Force
+    Copy-Replace (Join-Path $root 'lib\webview2\*.dll') $TrayDir
     # 以前の版が作っていた読み込み先の設定（SDK の自動更新用）は不要になったので消す
     Remove-Item (Join-Path $TrayDir 'AdGuardHomeTray.exe.config') -Force -ErrorAction SilentlyContinue
-    Get-ChildItem $TrayDir -Filter '*.old-*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     Copy-Item (Join-Path $root 'scripts\manage.ps1') $TrayDir -Force
     Copy-Item (Join-Path $root 'uninstall.ps1') $TrayDir -Force
 
@@ -181,8 +205,19 @@ try {
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
         -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
     $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
-    Register-ScheduledTask -TaskName 'AdGuardHome AutoUpdate' -Action $action -Trigger $daily, $boot, $logon `
-        -Settings $settings -Principal $taskPrincipal -Description 'AdGuard Home のバージョン情報を記録し、自動更新が有効なら最新版に更新します' -Force | Out-Null
+    # 自己更新は実行中のタスクから呼ばれるので、既存のタスクは作り直さない
+    if (-not ($SelfUpdate -and (Get-ScheduledTask -TaskName 'AdGuardHome AutoUpdate' -ErrorAction SilentlyContinue))) {
+        Register-ScheduledTask -TaskName 'AdGuardHome AutoUpdate' -Action $action -Trigger $daily, $boot, $logon `
+            -Settings $settings -Principal $taskPrincipal -Description 'AdGuard Home とトレイアプリのバージョン情報を記録し、自動更新が有効なら最新版に更新します' -Force | Out-Null
+    }
+    # 「今すぐ確認して更新」用（トリガーなし）。トレイが UAC なしで起動できるよう、利用者にも実行を許可する
+    if (-not ($SelfUpdate -and (Get-ScheduledTask -TaskName 'AdGuardHome UpdateNow' -ErrorAction SilentlyContinue))) {
+        $nowAction = New-ScheduledTaskAction -Execute 'powershell.exe' `
+            -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$manage`" -Action Update"
+        Register-ScheduledTask -TaskName 'AdGuardHome UpdateNow' -Action $nowAction -Settings $settings -Principal $taskPrincipal `
+            -Description 'AdGuard Home とトレイアプリを今すぐ最新版に更新します（トレイのメニューから実行）' -Force | Out-Null
+        Grant-TaskRun 'AdGuardHome UpdateNow'
+    }
 
     # 初回の情報記録
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $manage -Action Refresh

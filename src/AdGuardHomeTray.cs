@@ -151,7 +151,7 @@ namespace AdGuardHomeTray
             miAutoStart = new MenuItem("Windows 起動時に自動起動", delegate { ToggleAutoStart(); });
             // 終了はメインメニューの最後に常に表示する（見つからないと不安になるため）。
             // AdGuard Home の実行中は誤操作を防ぐため押せなくし、停止中だけ確認画面を経て終了できる
-            miExit = new MenuItem("終了…", delegate { ConfirmExit(); });
+            miExit = new MenuItem("アプリを終了する", delegate { ConfirmExit(); });
             var miBrowser = new MenuItem("管理画面をブラウザーで開く", delegate { Shell(GetDashboardUrl(), null); });
 
             // 保護の一時停止とサービスの開始・停止は「保護とサービス」にまとめる
@@ -189,7 +189,9 @@ namespace AdGuardHomeTray
             };
 
             tray = new NotifyIcon();
-            tray.Icon = icoUnknown;
+            // Windows は登録したときのアイコンを通知の見出しに使うので、アプリ本来の（通常の）アイコンで登録する。
+            // 状態別のアイコンには直後の PollStatus で切り替わる
+            tray.Icon = icoRunning;
             tray.Text = "AdGuard Home";
             tray.ContextMenu = menu;
             tray.MouseDoubleClick += delegate(object s, MouseEventArgs e) { if (e.Button == MouseButtons.Left) OpenDashboard(); };
@@ -322,7 +324,6 @@ namespace AdGuardHomeTray
             miRestart.Enabled = running;
             miUpdateNow.Text = upd ? "今すぐ " + latestVersion + " に更新" : "今すぐ更新";
             miExit.Enabled = CanExit;
-            miExit.Text = CanExit ? "終了…" : "終了（AdGuard Home の停止中のみ）";
             UpdateTooltip();
             if (tray.Icon != icon) tray.Icon = icon;
         }

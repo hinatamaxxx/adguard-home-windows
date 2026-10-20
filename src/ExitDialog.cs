@@ -6,17 +6,19 @@ namespace AdGuardHomeTray
 {
     class ExitDialog : ModernDialog
     {
-        public ExitDialog() : base("AdGuard Home トレイ", "トレイアイコンを終了しますか？")
+        public ExitDialog() : base("AdGuard Home", L.T("トレイアイコンを終了しますか？", "Exit the tray app?"))
         {
-            AddText("終了すると、次の機能が使えなくなります。", true);
-            AddBullets("通知領域での状態表示（停止・保護オフ・更新ありのお知らせ）",
-                       "メニューからの開始・停止、保護の一時停止、更新",
-                       "管理画面ウィンドウ（開いていれば閉じます）");
-            AddText("もう一度表示するには、スタートメニューの「AdGuard Home トレイ」を開きます。" +
-                    "Windows 起動時の自動起動がオンなら、次回のサインイン時にも表示されます。");
+            AddText(L.T("終了すると、次の機能が使えなくなります。", "These features stop working when you exit:"), true);
+            AddBullets(L.T("通知領域での状態表示（停止・保護オフ・新しいバージョンのお知らせ）", "Status in the notification area (stopped, protection off, new versions)"),
+                       L.T("メニューからの開始・停止、保護の一時停止、更新", "Starting and stopping, pausing protection, and updating from the menu"),
+                       L.T("管理画面ウィンドウ（開いていれば閉じます）", "The dashboard window (it closes if open)"));
+            AddText(L.T("もう一度表示するには、スタートメニューの「AdGuard Home」を開きます。" +
+                        "Windows 起動時の自動起動がオンなら、次回のサインイン時にも表示されます。",
+                        "To show it again, open \"AdGuard Home\" from the Start menu. " +
+                        "If it starts with Windows, it also appears the next time you sign in."));
 
-            var cancel = AddButton("キャンセル", ButtonKind.Normal);
-            var ok = AddButton("終了する", ButtonKind.Primary);
+            var cancel = AddButton(L.T("キャンセル", "Cancel"), ButtonKind.Normal);
+            var ok = AddButton(L.T("終了する", "Exit"), ButtonKind.Primary);
             cancel.DialogResult = DialogResult.Cancel;
             ok.DialogResult = DialogResult.OK;
             AcceptButton = ok;

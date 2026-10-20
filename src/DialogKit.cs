@@ -46,7 +46,7 @@ namespace AdGuardHomeTray
             textWidth = Px(widthLogical);
             Text = caption;
             Icon = Theme.TitleBarIcon();
-            Font = new Font("Yu Gothic UI", 9.75f);
+            Font = new Font(L.UiFont, 9.75f);
             AutoScaleMode = AutoScaleMode.None;   // 大きさは Px() で実際の拡大率から求める
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -71,7 +71,8 @@ namespace AdGuardHomeTray
             TitleLabel = new Label
             {
                 Text = title,
-                Font = new Font("Yu Gothic UI Semibold", 14f),
+                UseMnemonic = false,   // 「&」をそのまま表示する
+                Font = new Font(L.UiFontSemibold, 14f),
                 AutoSize = true,
                 MaximumSize = new Size(textWidth, 0),
                 ForeColor = P.Fore,
@@ -115,6 +116,7 @@ namespace AdGuardHomeTray
             var l = new Label
             {
                 Text = text,
+                UseMnemonic = false,
                 AutoSize = true,
                 MaximumSize = new Size(textWidth, 0),
                 ForeColor = emphasis ? P.Fore : P.Sub,
@@ -133,7 +135,7 @@ namespace AdGuardHomeTray
             for (int i = 0; i < items.Length; i++)
             {
                 t.Controls.Add(new Label { Text = "•", AutoSize = true, ForeColor = P.Sub, Margin = new Padding(0, 0, Px(8), Px(6)) }, 0, i);
-                t.Controls.Add(new Label { Text = items[i], AutoSize = true, MaximumSize = new Size(textWidth - Px(20), 0), ForeColor = P.Fore, Margin = new Padding(0, 0, 0, Px(6)) }, 1, i);
+                t.Controls.Add(new Label { Text = items[i], UseMnemonic = false, AutoSize = true, MaximumSize = new Size(textWidth - Px(20), 0), ForeColor = P.Fore, Margin = new Padding(0, 0, 0, Px(6)) }, 1, i);
             }
             Stack.Controls.Add(t);
         }
@@ -293,7 +295,7 @@ namespace AdGuardHomeTray
             var g = e.Graphics;
             g.Clear(Parent != null ? Parent.BackColor : p.Back);
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            int lineH = TextRenderer.MeasureText("あ", Font).Height;
+            int lineH = TextRenderer.MeasureText("あA", Font).Height;   // 1 行の高さ（日本語の文字を含めて測る）
             int top = Math.Max(0, (lineH - Box) / 2) + ModernDialog.Px(1);
             var box = new Rectangle(1, top, Box - 2, Box - 2);
             using (var path = ModernButton.RoundRect(box, ModernDialog.Px(4)))

@@ -109,7 +109,7 @@ namespace AdGuardHomeTray
                 // WebView2 ランタイムがない・起動できない場合は既定のブラウザーで開く
                 string url = pendingUrl;
                 Close();
-                MessageBox.Show("専用ウィンドウを開けなかったため、ブラウザーで開きます。\n" + ex.Message,
+                MessageBox.Show(L.T("専用ウィンドウを開けなかったため、ブラウザーで開きます。\n", "Could not open the dashboard window. It opens in your browser instead.\n") + ex.Message,
                     "AdGuard Home", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 openExternal(url);
                 return;
@@ -222,8 +222,8 @@ namespace AdGuardHomeTray
             AghApi.LoadCredentials(out curU, out curP);
             if (u == curU && p == curP) return;
             string q = string.IsNullOrEmpty(curU)
-                ? "このログイン情報をトレイにも保存しますか？\n保護の切り替えや統計の表示、管理画面の自動ログインに使います。"
-                : "保存済みのログイン情報と違います。新しい情報で更新しますか？";
+                ? L.T("このログイン情報をトレイにも保存しますか？\n保護の切り替えや統計の表示、管理画面の自動ログインに使います。", "Save this login info in the tray app too?\nThe app uses it to switch protection, show statistics, and sign in to the dashboard automatically.")
+                : L.T("保存済みのログイン情報と違います。新しい情報で更新しますか？", "This login info is different from the saved info. Replace the saved info with it?");
             if (MessageBox.Show(this, q, "AdGuard Home", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             AghApi.SaveCredentials(u, p);
             if (onCredentialsSaved != null) onCredentialsSaved(u, p);

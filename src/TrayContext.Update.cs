@@ -13,7 +13,7 @@ namespace AdGuardHomeTray
 {
     partial class TrayContext
     {
-        const string TrayReleaseApi = "https://api.github.com/repos/hinatamaxxx/adguard-home-windows-tray/releases/latest";
+        const string TrayReleaseApi = "https://api.github.com/repos/hinatamaxxx/adguard-home-windows/releases/latest";
         const string UpdateNowTask = "AdGuardHome UpdateNow";
         // 起動したときの exe の場所（更新で中身が入れ替わっても、同じ場所の新しい版を見る）
         static readonly string ExePath = Application.ExecutablePath;
@@ -34,8 +34,8 @@ namespace AdGuardHomeTray
         string PendingUpdateText()
         {
             if (IsAutoUpdateEnabled()) return null;
-            if (IsUpdateAvailable()) return "新しい AdGuard Home " + latestVersion + " があります";
-            if (IsAppUpdateAvailable()) return "このアプリの新しい版 v" + appLatestVersion + " があります";
+            if (IsUpdateAvailable()) return L.T("新しい AdGuard Home " + latestVersion + " があります", "AdGuard Home " + latestVersion + " is available");
+            if (IsAppUpdateAvailable()) return L.T("このアプリの新しいバージョン v" + appLatestVersion + " があります", "App v" + appLatestVersion + " is available");
             return null;
         }
 
@@ -43,13 +43,15 @@ namespace AdGuardHomeTray
         void UpdateVersionItems()
         {
             string agh = "AdGuard Home" + (currentVersion == "" ? "" : " " + currentVersion);
-            if (latestVersion != "" && currentVersion != "") agh += IsUpdateAvailable() ? "（" + latestVersion + " があります）" : "（最新です）";
-            string app = "このアプリ v" + AppVersion.ToString(3);
-            if (appLatestVersion != "") app += IsAppUpdateAvailable() ? "（v" + appLatestVersion + " があります）" : "（最新です）";
+            if (latestVersion != "" && currentVersion != "")
+                agh += IsUpdateAvailable() ? L.T("（" + latestVersion + " があります）", " (" + latestVersion + " available)") : L.T("（最新です）", " (up to date)");
+            string app = L.T("このアプリ v", "This app v") + AppVersion.ToString(3);
+            if (appLatestVersion != "")
+                app += IsAppUpdateAvailable() ? L.T("（v" + appLatestVersion + " があります）", " (v" + appLatestVersion + " available)") : L.T("（最新です）", " (up to date)");
             miAghVersion.Text = agh;
             miAppVersion.Text = app;
             miUpdateNow.Enabled = !updateTaskRunning;
-            miUpdateNow.Text = updateTaskRunning ? "更新しています…" : "今すぐ確認して更新";
+            miUpdateNow.Text = updateTaskRunning ? L.T("更新しています…", "Updating…") : L.T("今すぐ確認して更新", "Check and update now");
         }
 
         // AdGuard Home と、このアプリ（GitHub Releases）の最新版を調べる
@@ -91,13 +93,15 @@ namespace AdGuardHomeTray
             if (IsUpdateAvailable() && notifiedAgh != latestVersion)
             {
                 notifiedAgh = latestVersion;
-                ShowBalloon(8000, "AdGuard Home の更新", "新しい AdGuard Home " + latestVersion + " があります。クリックで更新します。",
+                ShowBalloon(8000, L.T("AdGuard Home の更新", "AdGuard Home update"),
+                    L.T("新しい AdGuard Home " + latestVersion + " があります。クリックで更新します。", "AdGuard Home " + latestVersion + " is available. Click to update."),
                     ToolTipIcon.Info, delegate { UpdateNow(); });
             }
             else if (IsAppUpdateAvailable() && notifiedApp != appLatestVersion)
             {
                 notifiedApp = appLatestVersion;
-                ShowBalloon(8000, "このアプリの更新", "このアプリの新しい版 v" + appLatestVersion + " があります。クリックで更新します。",
+                ShowBalloon(8000, L.T("このアプリの更新", "App update"),
+                    L.T("このアプリの新しいバージョン v" + appLatestVersion + " があります。クリックで更新します。", "App v" + appLatestVersion + " is available. Click to update."),
                     ToolTipIcon.Info, delegate { UpdateNow(); });
             }
         }
@@ -111,7 +115,7 @@ namespace AdGuardHomeTray
             try { ComCall(task, "Run", (object)null); }
             catch (Exception ex)
             {
-                ShowBalloon(5000, "AdGuard Home", "更新を開始できませんでした: " + ex.Message, ToolTipIcon.Error);
+                ShowBalloon(5000, "AdGuard Home", L.T("更新を開始できませんでした: ", "Could not start the update: ") + ex.Message, ToolTipIcon.Error);
                 return;
             }
             updateTaskRunning = true;
@@ -144,9 +148,9 @@ namespace AdGuardHomeTray
             updateTaskRunning = false;
             RefreshCurrentVersionAsync();
             CheckUpdateAsync();
-            if (code == 0) ShowBalloon(5000, "AdGuard Home", "最新版に更新しました。", ToolTipIcon.Info, null, 0);
-            else if (code == 2) ShowBalloon(4000, "AdGuard Home", "AdGuard Home もこのアプリも最新です。", ToolTipIcon.Info);
-            else ShowBalloon(6000, "AdGuard Home", "更新に失敗しました。ログ（manage.log）を確認してください。", ToolTipIcon.Error);
+            if (code == 0) ShowBalloon(5000, "AdGuard Home", L.T("最新版に更新しました。", "Updated to the latest version."), ToolTipIcon.Info, null, 0);
+            else if (code == 2) ShowBalloon(4000, "AdGuard Home", L.T("AdGuard Home もこのアプリも最新です。", "AdGuard Home and this app are up to date."), ToolTipIcon.Info);
+            else ShowBalloon(6000, "AdGuard Home", L.T("更新に失敗しました。ログ（manage.log）を確認してください。", "Update failed. Check the log (manage.log)."), ToolTipIcon.Error);
             notifiedFailures = SettingInt("UpdateFailures");   // 今知らせたので、自動更新の失敗通知は重ねない
             UpdateVisuals();
             CheckSelfUpdated();
@@ -160,8 +164,9 @@ namespace AdGuardHomeTray
             if (n >= 2 && notifiedFailures < 2)
             {
                 notifiedFailures = n;
-                ShowBalloon(8000, "AdGuard Home の自動更新",
-                    "自動更新に " + n + " 回続けて失敗しています。インターネット接続を確認するか、「アップデート」→「今すぐ確認して更新」を試してください。",
+                ShowBalloon(8000, L.T("AdGuard Home の自動更新", "AdGuard Home automatic updates"),
+                    L.T("自動更新に " + n + " 回続けて失敗しています。インターネット接続を確認するか、「アップデート」→「今すぐ確認して更新」を試してください。",
+                        "Automatic updates have failed " + n + " times in a row. Check your internet connection, or try Updates > Check and update now."),
                     ToolTipIcon.Warning);
             }
         }

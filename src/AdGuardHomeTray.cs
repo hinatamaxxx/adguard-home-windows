@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.3.0")]
-[assembly: AssemblyFileVersion("1.8.3.0")]
+[assembly: AssemblyVersion("1.8.4.0")]
+[assembly: AssemblyFileVersion("1.8.4.0")]
 
 namespace AdGuardHomeTray
 {
@@ -46,13 +46,6 @@ namespace AdGuardHomeTray
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 return UninstallDialog.Run(Array.Exists(args, a => string.Equals(a, "--keep", StringComparison.OrdinalIgnoreCase)));
-            }
-            // セットアップ画面だけを出して終了する（Setup.cmd から呼ばれる）
-            if (Array.Exists(args, a => string.Equals(a, "--setup", StringComparison.OrdinalIgnoreCase)))
-            {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                return SetupDialog.Run();
             }
             // アイコンファイル（.ico）を書き出して終了する（manage.ps1 から呼ばれる）。手元の AdGuard Home から取得した
             // ロゴで描くので、スタートメニューや「インストールされているアプリ」に本物のロゴを、配布物に入れずに出せる

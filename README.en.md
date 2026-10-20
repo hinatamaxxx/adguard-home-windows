@@ -6,9 +6,9 @@ This setup kit runs the official [AdGuard Home](https://github.com/AdguardTeam/A
 
 ## Quick install
 
-**Use one PowerShell command (easiest)**
+**Use one PowerShell command**
 
-Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. The command runs [get.ps1](get.ps1), which downloads the latest release, checks its SHA-256, and opens the setup window. Click **Install**. Choose **Yes** when Windows asks "Do you want to allow this app to make changes to your device?"
+Right-click the Start button and choose **Terminal** to open PowerShell. Paste this command and press Enter. You don't need to run PowerShell as an administrator. When Windows asks "Do you want to allow this app to make changes to your device?", choose **Yes**. The command runs [get.ps1](get.ps1), which downloads the latest release, checks its SHA-256, installs it without any windows, sets it to start when you sign in, and starts the tray app.
 
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
@@ -26,11 +26,6 @@ If you also want either of these, include it in your request. The agent will gui
 
 - Use it from other devices at home, such as phones, tablets, and game consoles
 - Use it on an iPhone or iPad away from home (uses Tailscale)
-
-**Install from the ZIP file**
-
-1. Download `AdGuardHomeTray.zip` from [Releases](https://github.com/hinatamaxxx/adguard-home-windows/releases/latest) and extract it. (To build from source, download the repository as a ZIP file or use `git clone`. It builds automatically the first time.)
-2. Double-click `Setup.cmd`, click **Install**, and choose **Yes** when asked.
 
 **After installing**
 
@@ -66,13 +61,13 @@ Note: The address screenshot uses a special build that shows example addresses. 
 
 ![Dashboard window](screenshots/dashboard.png)
 
-| Setup | Uninstall |
+| Uninstall | Stop confirmation |
 |---|---|
-| ![Setup](screenshots/en/setup.png) | ![Uninstall](screenshots/en/dialog-uninstall.png) |
+| ![Uninstall](screenshots/en/dialog-uninstall.png) | ![Stop confirmation](screenshots/en/dialog-stop.png) |
 
-| Stop confirmation | Exit confirmation |
-|---|---|
-| ![Stop confirmation](screenshots/en/dialog-stop.png) | ![Exit confirmation](screenshots/en/dialog-exit.png) |
+| Exit confirmation |
+|---|
+| ![Exit confirmation](screenshots/en/dialog-exit.png) |
 
 ## Features
 
@@ -102,9 +97,9 @@ On ARM64 Windows, setup installs the ARM64 version of AdGuard Home. This has not
 
 ## Install and update
 
-The setup window shows what it will install. Click **Install**, or **Update** if it is already installed. Choose **Yes** at the Windows prompt. Setup is done when the completion page appears. You can choose "Start the tray app with Windows" and "Open the tray app when finished". Starting with Windows is off by default for a new install. Updates keep your current choice.
+Install it as described in "Quick install" above. After that, it updates itself automatically (see "How updates work"). You can turn off starting with Windows under **More** in the tray menu or in Windows **Settings > Apps > Startup**.
 
-To install without the setup window, run `install.ps1` directly in PowerShell as an administrator.
+To build from source, run `build.ps1`, then run `install.ps1` in PowerShell as an administrator.
 
 ## Layout
 
@@ -142,7 +137,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.8.0 (up to date)
+  This app v1.8.4 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)
@@ -167,11 +162,11 @@ The app uses Japanese if your Windows display language is Japanese. Otherwise, i
 
 ## Files
 
-- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It downloads the latest release ZIP, checks its SHA-256, and opens the setup window
+- `get.ps1`: installs with one command. It is saved as UTF-8 without a BOM because it is loaded with `irm … | iex`. It downloads the latest release ZIP, checks its SHA-256, and installs it without any windows
 - `src/AdGuardHomeTray.cs`: the tray app, built with the .NET Framework 4.x `csc.exe`
 - `src/L10n.cs`: display language (Japanese and English)
 - `src/DashboardForm.cs`: the separate dashboard window (WebView2) / `src/Theme.cs`: light and dark themes
-- `src/DialogKit.cs`: shared dialog parts in the Windows 11 style / `src/SetupDialog.cs`, `src/UninstallDialog.cs`, `src/ExitDialog.cs`, `src/StopDialog.cs`: the setup, uninstall, exit, and stop windows
+- `src/DialogKit.cs`: shared dialog parts in the Windows 11 style / `src/UninstallDialog.cs`, `src/ExitDialog.cs`, `src/StopDialog.cs`: the uninstall, exit, and stop windows
 - `src/TrayContext.MenuHover.cs`: descriptions that appear when you hover over menu items
 - `src/TrayContext.Update.cs`: shows versions, runs updates now, reports automatic update failures, and restarts the app after an update
 - `src/TrayContext.SubmenuUp.cs`: opens submenus upward from the parent item
@@ -181,8 +176,7 @@ The app uses Japanese if your Windows display language is Japanese. Otherwise, i
 - `scripts/configure-adguard.ps1`: changes AdGuard Home settings. `-EnableFunnelDoH` accepts DoH through Funnel. `-Faster` makes it faster. The script checks the result before applying it and makes a backup
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: creates a DNS profile for iOS / registers a device name
 - `AGENTS.md` (loaded from `CLAUDE.md`): installation steps for AI agents
-- `Setup.cmd`: opens the setup window (`build\AdGuardHomeTray.exe --setup`)
-- `install.ps1`: the install script. It runs as administrator and is called through UAC from the setup window
+- `install.ps1`: the install script. It runs as administrator and is called through UAC from `get.ps1`
 - `uninstall.ps1`: removes the app. You can run it from **AdGuard Home for Windows** in Windows **Settings > Apps > Installed apps**. It asks for administrator permission automatically. By default, it also deletes all settings and data. To keep them, check "Keep settings and data" in the confirmation. Use `-Quiet` to skip the confirmation and `-KeepSettings` to keep settings and data
 
 ## Registry keys and files that change

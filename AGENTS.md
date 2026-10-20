@@ -15,11 +15,8 @@
 ## 1. 基本の導入（この PC で使う）
 
 1. 前提を確認する: Windows 10/11 x64、`%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe` があること（.NET Framework 4.8。通常は標準で入っている）。
-2. リポジトリを取得する（`git clone <URL>`、または ZIP をダウンロードして展開）。取得とセットアップ画面の起動をまとめて行う場合は、PowerShell で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex`（最新リリースの ZIP を SHA-256 で照合してからセットアップ画面を開く。この場合 3 は不要）。
-3. `Setup.cmd` を実行する（初回は自動でビルドしてからセットアップ画面を開く）。ユーザーに次のことを伝える。
-   - セットアップ画面で「インストール」を押す
-   - 「このアプリがデバイスに変更を加えることを許可しますか？」で「はい」を押す
-   - 画面なしで入れる場合は `build.ps1` のあと、`install.ps1` を管理者で実行してもよい（`Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "<repo>\install.ps1"'`）
+2. PowerShell（管理者でなくてよい）で `irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex` を実行する。最新リリースの ZIP を SHA-256 で照合し、画面を出さずにインストールして、ログオン時の自動起動を設定し、トレイアプリを起動する。ユーザーには「『このアプリがデバイスに変更を加えることを許可しますか？』と出たら『はい』を押す」とだけ伝える。
+3. ソースから入れる場合は、リポジトリを取得して `build.ps1` を実行し、`install.ps1` を管理者で実行する（`Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "<repo>\install.ps1"'`）。
 4. AdGuard Home の初期設定（ユーザーが行う）: トレイアイコンをダブルクリックすると `http://127.0.0.1:3000/` の初期設定画面が開く。
    - 管理画面のポートは 80 のままでよい。DNS の待ち受けが「ポートが使用中」で失敗したら（WSL / Hyper-V の「インターネット接続の共有」が `0.0.0.0:53` を使っている場合）、`127.0.0.1` か LAN の IP を選ぶ。
    - ユーザー名とパスワードはユーザーが決める。

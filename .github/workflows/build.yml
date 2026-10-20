@@ -39,7 +39,7 @@ jobs:
           $pkg = 'AdGuardHomeTray'
           New-Item -ItemType Directory -Force "dist/$pkg/build" | Out-Null
           Copy-Item build/AdGuardHomeTray.exe, build/*.dll "dist/$pkg/build/"
-          Copy-Item Setup.cmd, install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
+          Copy-Item install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
           Copy-Item scripts, lib, src -Destination "dist/$pkg/" -Recurse
           Compress-Archive -Path "dist/$pkg" -DestinationPath "dist/$pkg.zip" -Force
           # 自己更新（manage.ps1）が照合する SHA-256

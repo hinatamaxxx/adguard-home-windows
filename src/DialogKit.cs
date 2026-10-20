@@ -327,39 +327,4 @@ namespace AdGuardHomeTray
             }
         }
     }
-
-    // 処理中を示す細いバー（左右に流れる）
-    class ModernProgress : Control
-    {
-        readonly DialogPalette p;
-        readonly Timer timer = new Timer { Interval = 16 };
-        float pos;
-
-        public ModernProgress(DialogPalette palette)
-        {
-            p = palette;
-            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            timer.Tick += delegate { pos += 0.012f; if (pos > 1.4f) pos = -0.4f; Invalidate(); };
-            timer.Start();
-        }
-
-        protected override void Dispose(bool disposing) { if (disposing) timer.Dispose(); base.Dispose(disposing); }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            var g = e.Graphics;
-            g.Clear(Parent != null ? Parent.BackColor : p.Back);
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            int h = Math.Max(2, ModernDialog.Px(3));
-            int y = (Height - h) / 2;
-            using (var track = new SolidBrush(p.Dark ? Color.FromArgb(0x48, 0x48, 0x48) : Color.FromArgb(0xE0, 0xE0, 0xE0)))
-            using (var path = ModernButton.RoundRect(new Rectangle(0, y, Width - 1, h), h / 2)) g.FillPath(track, path);
-            int segW = Width * 2 / 5;
-            int x = (int)(pos * Width) - segW / 2;
-            var seg = Rectangle.Intersect(new Rectangle(x, y, segW, h), new Rectangle(0, y, Width - 1, h));
-            if (seg.Width > h)
-                using (var b = new SolidBrush(p.Accent))
-                using (var path = ModernButton.RoundRect(seg, h / 2)) g.FillPath(b, path);
-        }
-    }
 }

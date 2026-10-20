@@ -26,7 +26,9 @@ jobs:
           $bad = 0
           Get-ChildItem -Recurse -Include *.ps1 | ForEach-Object {
             $errors = $null
-            [void][Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            # UTF-8 として読む（irm | iex 用の get.ps1 は BOM なしのため、ParseFile だと文字化けする）
+            $text = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8)
+            [void][Management.Automation.Language.Parser]::ParseInput($text, $_.FullName, [ref]$null, [ref]$errors)
             if ($errors) { Write-Host "::error file=$($_.FullName)::$($errors[0].Message)"; $bad++ }
           }
           if ($bad) { exit 1 }

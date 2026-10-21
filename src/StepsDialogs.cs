@@ -66,7 +66,7 @@ namespace AdGuardHomeTray
             var ok = AddButton(L.T("アンインストール", "Uninstall"), ButtonKind.Primary);
             cancel.Click += delegate { WriteChoice("cancel"); Close(); };
             ok.Click += delegate { Start(); };
-            AcceptButton = ok;
+            AcceptButton = cancel;   // 既定のボタンもキャンセル（Windows の確認と同じ。Enter と、既定のボタンへのマウスの自動移動の先）
             CancelButton = cancel;
             TopMost = true;
             Shown += delegate { Activate(); cancel.Focus(); };   // 誤って Enter で消さないよう、最初はキャンセルにフォーカス

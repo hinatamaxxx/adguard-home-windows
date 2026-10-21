@@ -132,11 +132,16 @@ namespace AdGuardHomeTray
             st.AreBrowserAcceleratorKeysEnabled = false; // Ctrl+P（印刷）、Ctrl+F（検索）などを無効に
             // ページの配色（AdGuard Home のテーマ「自動」）を Windows のモードに合わせる
             ApplyTheme();
-            // AdGuard Home の初期設定画面とログイン画面は、ブラウザーに保存したテーマ（account_theme）を使い、
-            // 保存がなければライトにする。開くたびにその時点の判定結果で上書きするので、ページのスクリプトより先に
-            // 毎回「自動」を入れ、Windows のライト/ダークに合わせる（ログイン後の画面は AdGuard Home の設定に従う）
+            // AdGuard Home の初期設定画面は、最初にテーマを当てない（画面下で選び直すまでライトのまま。下の選択は
+            // 「自動」と表示される）。テーマが未設定のページにだけ、Windows のライト/ダークに合わせたテーマを当てる。
+            // ログイン画面は自分で当て、ログイン後の画面は AdGuard Home の設定で上書きする。
+            // 画面下で「自動」を選んだときに使う保存値（account_theme）も、毎回「自動」にしておく
             await core.AddScriptToExecuteOnDocumentCreatedAsync(
-                "try { localStorage.setItem('account_theme', JSON.stringify('auto')); } catch (e) { }");
+                "try { localStorage.setItem('account_theme', JSON.stringify('auto')); } catch (e) { }" +
+                "document.addEventListener('DOMContentLoaded', function () {" +
+                "  if (document.body && !document.body.dataset.theme)" +
+                "    document.body.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';" +
+                "});");
 
             // 右クリックメニューは、文字入力・選択時のコピー/切り取り/貼り付け/すべて選択だけにする
             core.ContextMenuRequested += delegate(object s, CoreWebView2ContextMenuRequestedEventArgs e)

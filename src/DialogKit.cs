@@ -1,6 +1,7 @@
 ﻿// 確認画面（セットアップ・アンインストール・終了）の共通部品。Windows 11 の標準ダイアログに近い見た目:
 // 上に本文、下に色の違うボタン帯、角丸のボタンとチェックボックス。高 DPI と Windows のライト/ダークに対応する。
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -35,9 +36,14 @@ namespace AdGuardHomeTray
         protected readonly DialogPalette P = new DialogPalette();
         protected readonly Label TitleLabel;
         protected readonly FlowLayoutPanel Stack;      // 見出しの下に縦に積む領域
-        protected readonly FlowLayoutPanel Buttons;    // 右寄せ（追加した順に右から並ぶ）
+        // 下の帯のボタン（追加した順に右から並ぶ）。帯（footer）の中ではなくウィンドウ直下に置き、OnLayout で帯の上に並べる。
+        // WinForms は表示の瞬間、Windows の「既定のボタンにマウスを自動で移動する」がオンなら既定のボタンへカーソルを移すが、
+        // ボタンの位置をウィンドウ直下の部品として計算するので、帯の中に入れると移動先がずれる
+        readonly List<ModernButton> buttons = new List<ModernButton>();
         readonly int textWidth;
         readonly Panel footer;
+        readonly RowStyle footerRow;
+        readonly int footerHeight = Px(18) * 2 + Px(34);   // 上下の余白 18 ＋ ボタンの高さ 34
         Point center;
         bool centerKnown;
 
@@ -58,7 +64,7 @@ namespace AdGuardHomeTray
             BackColor = P.Back;
             ForeColor = P.Fore;
 
-            var root = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, AutoSize = true, Margin = new Padding(0), Padding = new Padding(0), BackColor = P.Back };
+            var root = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = new Padding(0), Padding = new Padding(0), BackColor = P.Back };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
             var content = new TableLayoutPanel { ColumnCount = 2, AutoSize = true, BackColor = P.Back, Margin = new Padding(0), Padding = new Padding(Px(28), Px(26), Px(32), Px(18)) };
@@ -82,14 +88,30 @@ namespace AdGuardHomeTray
             content.Controls.Add(Stack, 1, 0);
             root.Controls.Add(content, 0, 0);
 
-            footer = new Panel { AutoSize = true, Dock = DockStyle.Fill, BackColor = P.Footer, Margin = new Padding(0), Padding = new Padding(Px(28), Px(18), Px(28), Px(18)) };
+            footer = new Panel { Dock = DockStyle.Fill, BackColor = P.Footer, Margin = new Padding(0) };
             footer.Paint += delegate(object s, PaintEventArgs e) { using (var pen = new Pen(P.Line)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
-            Buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, BackColor = P.Footer, Margin = new Padding(0) };
-            footer.Controls.Add(Buttons);
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            footerRow = new RowStyle(SizeType.Absolute, footerHeight);
+            root.RowStyles.Add(footerRow);
             root.Controls.Add(footer, 0, 1);
 
             Controls.Add(root);
             HandleCreated += delegate { Theme.ApplyTitleBar(this); };
+        }
+
+        // 表示する前にレイアウトを確定させ、その大きさで画面の中央に置く。Windows の「既定のボタンにマウスを
+        // 自動で移動する」は表示した瞬間のボタンの位置へ動かすので、レイアウトが表示後にずれ込むと移動先がずれる
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            LayoutAll(this);
+            CenterToScreen();
+        }
+
+        static void LayoutAll(Control c)
+        {
+            foreach (Control child in c.Controls) LayoutAll(child);
+            c.PerformLayout();
         }
 
         // 画面の切り替えで大きさが変わっても、中心の位置を保つ
@@ -153,8 +175,10 @@ namespace AdGuardHomeTray
             SuspendLayout();
             TitleLabel.Text = title;
             while (Stack.Controls.Count > 1) { var c = Stack.Controls[1]; Stack.Controls.RemoveAt(1); c.Dispose(); }
-            while (Buttons.Controls.Count > 0) { var c = Buttons.Controls[0]; Buttons.Controls.RemoveAt(0); c.Dispose(); }
+            foreach (var b in buttons) { Controls.Remove(b); b.Dispose(); }
+            buttons.Clear();
             footer.Visible = false;   // ボタンがない画面（処理中など）ではボタン帯ごと隠す
+            footerRow.Height = 0;
             AcceptButton = null;
             CancelButton = null;
             ResumeLayout(true);
@@ -164,10 +188,30 @@ namespace AdGuardHomeTray
 
         protected ModernButton AddButton(string text, ButtonKind kind)
         {
-            var b = new ModernButton(P, kind) { Text = text, Margin = new Padding(Px(8), 0, 0, 0) };
+            var b = new ModernButton(P, kind) { Text = text };
             footer.Visible = true;
-            Buttons.Controls.Add(b);
+            footerRow.Height = footerHeight;
+            buttons.Add(b);
+            Controls.Add(b);
+            b.BringToFront();
+            PerformLayout();
             return b;
+        }
+
+        // ボタンを帯の上に右から並べる（帯の右の余白 28、ボタンの間 8、上下は中央）
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            base.OnLayout(e);
+            if (footer == null || !footer.Visible) return;
+            var root = footer.Parent;
+            int right = root.Left + footer.Right - Px(28);
+            int top = root.Top + footer.Top;
+            foreach (var b in buttons)
+            {
+                right -= b.Width;
+                b.Location = new Point(right, top + (footerHeight - b.Height) / 2);
+                right -= Px(8);
+            }
         }
     }
 
@@ -211,7 +255,7 @@ namespace AdGuardHomeTray
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.Clear(Parent != null ? Parent.BackColor : p.Footer);
+            g.Clear(p.Footer);   // 下の帯の上に置く（親はウィンドウ）
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color fill, border, text;
             if (kind == ButtonKind.Normal)

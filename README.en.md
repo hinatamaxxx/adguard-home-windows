@@ -137,7 +137,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.8.5 (up to date)
+  This app v1.8.6 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)

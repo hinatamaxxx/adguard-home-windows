@@ -99,7 +99,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 
 入れ方は上の「かんたん導入」のとおりです。入れたあとは自動で更新されます（下の「更新のしくみ」）。ログオン時の自動起動は、トレイのメニュー「その他」か、Windows の「設定 → アプリ → スタートアップ」でオフにできます。
 
-ソースからビルドして入れる場合は、`build.ps1` を実行してから、`install.ps1` を管理者の PowerShell で実行します。
+ソースからビルドして入れる場合は、`scripts\build.ps1` を実行してから、`scripts\install.ps1` を管理者の PowerShell で実行します。
 
 ## 構成
 
@@ -137,7 +137,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 ```
 アップデート ▸
   AdGuard Home v0.107.79（最新です）
-  このアプリ v1.8.7（最新です）
+  このアプリ v1.8.8（最新です）
   ─────────────
   今すぐ確認して更新
   ✓ 自動で更新する（毎日）
@@ -171,13 +171,13 @@ Windows の表示言語が日本語なら日本語、それ以外なら英語で
 - `src/TrayContext.Update.cs`: バージョンの表示、今すぐ更新、自動更新の失敗の通知、更新後の自動再起動
 - `src/TrayContext.SubmenuUp.cs`: 子メニューを親の項目より上に向かって開く
 - `lib/webview2/`: WebView2 SDK（Microsoft.Web.WebView2 1.0.4258.31、nuget.org。Microsoft の署名を確認済み）
-- `build.ps1`: ビルド（`build\AdGuardHomeTray.exe` を作る）
+- `scripts\build.ps1`: ビルド（`build\AdGuardHomeTray.exe` を作る）
 - `scripts/manage.ps1`: サービスの操作と更新（管理者・SYSTEM で実行）
 - `scripts/configure-adguard.ps1`: AdGuard Home の設定変更（`-EnableFunnelDoH` で Funnel 経由の DoH を受ける、`-Faster` で速くする。確かめてから反映し、バックアップも取る）
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: iOS 用の DNS プロファイルの作成 / 端末名の登録
-- `AGENTS.md`（`CLAUDE.md` から読み込む）: AI エージェント向けの導入手順
-- `install.ps1`: インストールの本体（管理者で実行。`get.ps1` から UAC で呼ばれる）
-- `uninstall.ps1`: アンインストール（Windows の「設定 → アプリ → インストールされているアプリ」の「AdGuard Home for Windows」から実行できる。自動で管理者に昇格する。既定で設定とデータもすべて削除し、確認画面の「設定とデータを残す」にチェックを入れたときだけ残す。削除の進み具合と完了を同じ画面に表示する。確認なしで実行するには `-Quiet`、残すには `-KeepSettings`）
+- `AGENTS.md`: AI エージェント向けの導入手順
+- `scripts\install.ps1`: インストールの本体（管理者で実行。`get.ps1` から UAC で呼ばれる）
+- `scripts\uninstall.ps1`: アンインストール（Windows の「設定 → アプリ → インストールされているアプリ」の「AdGuard Home for Windows」から実行できる。自動で管理者に昇格する。既定で設定とデータもすべて削除し、確認画面の「設定とデータを残す」にチェックを入れたときだけ残す。削除の進み具合と完了を同じ画面に表示する。確認なしで実行するには `-Quiet`、残すには `-KeepSettings`）
 
 ## 変更するレジストリとファイルの一覧
 

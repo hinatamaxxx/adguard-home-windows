@@ -18,7 +18,7 @@ jobs:
 
       - name: Build tray app
         shell: powershell
-        run: ./build.ps1
+        run: ./scripts/build.ps1
 
       - name: Check scripts parse
         shell: powershell
@@ -39,7 +39,9 @@ jobs:
           $pkg = 'adguard-home-windows'
           New-Item -ItemType Directory -Force "dist/$pkg/build" | Out-Null
           Copy-Item build/AdGuardHomeTray.exe, build/*.dll "dist/$pkg/build/"
-          Copy-Item install.ps1, uninstall.ps1, build.ps1, README.md, LICENSE, AGENTS.md "dist/$pkg/"
+          Copy-Item README.md, LICENSE, AGENTS.md "dist/$pkg/"
+          # 1.8.7 以前の自動更新は一式の直下の install.ps1 を呼ぶので、scripts\install.ps1 へ渡す入口を置く
+          Copy-Item .github/legacy-install.ps1 "dist/$pkg/install.ps1"
           Copy-Item scripts, lib, src -Destination "dist/$pkg/" -Recurse
           Compress-Archive -Path "dist/$pkg" -DestinationPath "dist/$pkg.zip" -Force
           # 自己更新（manage.ps1）が照合する SHA-256

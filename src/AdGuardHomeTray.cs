@@ -1,5 +1,5 @@
 ﻿// AdGuard Home 用の通知領域（タスクトレイ）常駐アプリ。
-// .NET Framework 4.x 付属の csc.exe (C# 5) でビルドする: build.ps1 を参照。
+// .NET Framework 4.x 付属の csc.exe (C# 5) でビルドする: scripts\build.ps1 を参照。
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.7.0")]
-[assembly: AssemblyFileVersion("1.8.7.0")]
+[assembly: AssemblyVersion("1.8.8.0")]
+[assembly: AssemblyFileVersion("1.8.8.0")]
 
 namespace AdGuardHomeTray
 {
@@ -974,7 +974,7 @@ namespace AdGuardHomeTray
             AddInfo(items, L.T("項目をクリックするとアドレスをコピーします", "Click an item to copy the address"));
         }
 
-        // 接続用アドレスの表示。スクリーンショット撮影用のビルド（build.ps1 -Screenshot、SCREENSHOT_BUILD）だけは、
+        // 接続用アドレスの表示。スクリーンショット撮影用のビルド（scripts\build.ps1 -Screenshot、SCREENSHOT_BUILD）だけは、
         // 環境変数 ADGUARD_TRAY_DEMO=1 のとき表示を書式見本に置き換える。通常のビルド（配布物）にはこの処理は入らない。
 #if SCREENSHOT_BUILD
         static int demoCount;

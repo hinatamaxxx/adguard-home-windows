@@ -2,7 +2,7 @@
 # -Screenshot: README のスクリーンショット撮影用ビルド（build\screenshot\ に出力。配布しない）
 param([switch]$Screenshot)
 $ErrorActionPreference = 'Stop'
-$root = $PSScriptRoot
+$root = Split-Path $PSScriptRoot -Parent   # リポジトリのフォルダー（このスクリプトは scripts にある）
 $out = if ($Screenshot) { Join-Path $root 'build\screenshot' } else { Join-Path $root 'build' }
 $src = Join-Path $root 'src\*.cs'
 $manifest = '/win32manifest:' + (Join-Path $root 'src\app.manifest')

@@ -21,7 +21,7 @@ function Step([string]$jaText, [string]$enText) {
     Write-Host $line
     try { [IO.File]::AppendAllText($progressFile, $line + "`r`n", (New-Object Text.UTF8Encoding $false)) } catch { }
 }
-$root = $PSScriptRoot
+$root = Split-Path $PSScriptRoot -Parent   # 一式のフォルダー（このスクリプトは scripts にある）
 $progressFile = Join-Path $root 'progress.log'
 Remove-Item $progressFile -Force -ErrorAction SilentlyContinue
 Start-Transcript -Path (Join-Path $root 'install.log') -Force | Out-Null
@@ -201,7 +201,7 @@ try {
     # 管理画面ウィンドウ用の WebView2 SDK（同梱。描画するランタイムは Windows が自動更新する）
     Copy-Replace (Join-Path $root 'lib\webview2\*.dll') $TrayDir
     Copy-Item (Join-Path $root 'scripts\manage.ps1') $TrayDir -Force
-    Copy-Item (Join-Path $root 'uninstall.ps1') $TrayDir -Force
+    Copy-Item (Join-Path $root 'scripts\uninstall.ps1') $TrayDir -Force
 
     # 設定値（自動更新は既定で有効）
     if ($null -eq (Get-Settings).AutoUpdate) { Set-Setting AutoUpdate 1 }

@@ -99,7 +99,7 @@ On ARM64 Windows, setup installs the ARM64 version of AdGuard Home. This has not
 
 Install it as described in "Quick install" above. After that, it updates itself automatically (see "How updates work"). You can turn off starting with Windows under **More** in the tray menu or in Windows **Settings > Apps > Startup**.
 
-To build from source, run `build.ps1`, then run `install.ps1` in PowerShell as an administrator.
+To build from source, run `scripts\build.ps1`, then run `scripts\install.ps1` in PowerShell as an administrator.
 
 ## Layout
 
@@ -137,7 +137,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.8.7 (up to date)
+  This app v1.8.8 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)
@@ -171,13 +171,13 @@ The app uses Japanese if your Windows display language is Japanese. Otherwise, i
 - `src/TrayContext.Update.cs`: shows versions, runs updates now, reports automatic update failures, and restarts the app after an update
 - `src/TrayContext.SubmenuUp.cs`: opens submenus upward from the parent item
 - `lib/webview2/`: WebView2 SDK (Microsoft.Web.WebView2 1.0.4258.31 from nuget.org; Microsoft signature verified)
-- `build.ps1`: builds `build\AdGuardHomeTray.exe`
+- `scripts\build.ps1`: builds `build\AdGuardHomeTray.exe`
 - `scripts/manage.ps1`: controls the service and runs updates as administrator or SYSTEM
 - `scripts/configure-adguard.ps1`: changes AdGuard Home settings. `-EnableFunnelDoH` accepts DoH through Funnel. `-Faster` makes it faster. The script checks the result before applying it and makes a backup
 - `scripts/new-ios-dns-profile.ps1` / `scripts/set-client-name.ps1`: creates a DNS profile for iOS / registers a device name
-- `AGENTS.md` (loaded from `CLAUDE.md`): installation steps for AI agents
-- `install.ps1`: the install script. It runs as administrator and is called through UAC from `get.ps1`
-- `uninstall.ps1`: removes the app. You can run it from **AdGuard Home for Windows** in Windows **Settings > Apps > Installed apps**. It asks for administrator permission automatically. By default, it also deletes all settings and data. To keep them, check "Keep settings and data" in the confirmation. Use `-Quiet` to skip the confirmation and `-KeepSettings` to keep settings and data
+- `AGENTS.md`: installation steps for AI agents
+- `scripts\install.ps1`: the install script. It runs as administrator and is called through UAC from `get.ps1`
+- `scripts\uninstall.ps1`: removes the app. You can run it from **AdGuard Home for Windows** in Windows **Settings > Apps > Installed apps**. It asks for administrator permission automatically. By default, it also deletes all settings and data. To keep them, check "Keep settings and data" in the confirmation. Use `-Quiet` to skip the confirmation and `-KeepSettings` to keep settings and data
 
 ## Registry keys and files that change
 

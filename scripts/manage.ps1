@@ -210,13 +210,13 @@ function Invoke-TrayUpdate {
         [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
         $pkg = Join-Path $work 'x\adguard-home-windows'
         $newExe = Join-Path $pkg 'build\AdGuardHomeTray.exe'
-        if (-not (Test-Path $newExe) -or -not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw 'tray: unexpected package layout' }
+        if (-not (Test-Path $newExe) -or -not (Test-Path (Join-Path $pkg 'scripts\install.ps1'))) { throw 'tray: unexpected package layout' }
         if ((Get-Ver (Get-Item $newExe).VersionInfo.FileVersion) -ne $vl) { throw 'tray: package version does not match the release' }
 
         # 新しい版の install.ps1 で入れ替える。動いているトレイは止めず、新しい exe に気づいて自分で再起動する
         Enter-Maintenance 'TrayUpdate'
         try {
-            $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pkg 'install.ps1') -SelfUpdate -InstallDir $aghDir -TrayDir $trayDir 2>&1 | Out-String
+            $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pkg 'scripts\install.ps1') -SelfUpdate -InstallDir $aghDir -TrayDir $trayDir 2>&1 | Out-String
             $code = $LASTEXITCODE
         } finally { Exit-Maintenance }
         if ($code -ne 0) { throw ("tray: install.ps1 failed ($code): " + $out.Trim()) }

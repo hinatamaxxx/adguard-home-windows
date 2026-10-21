@@ -40,12 +40,12 @@
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [IO.Compression.ZipFile]::ExtractToDirectory($zip, (Join-Path $work 'x'))
         $pkg = Join-Path $work 'x\adguard-home-windows'
-        if (-not (Test-Path (Join-Path $pkg 'install.ps1'))) { throw (T 'ZIP の中身が想定と違います。' 'The ZIP file does not contain the expected files.') }
+        if (-not (Test-Path (Join-Path $pkg 'scripts\install.ps1'))) { throw (T 'ZIP の中身が想定と違います。' 'The ZIP file does not contain the expected files.') }
 
         Write-Host (T 'インストールしています。「このアプリがデバイスに変更を加えることを許可しますか？」と表示されたら「はい」を選んでください...' 'Installing. When Windows asks "Do you want to allow this app to make changes to your device?", choose Yes...')
         try {
             $p = Start-Process powershell.exe -Verb RunAs -PassThru -WindowStyle Hidden `
-                -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $pkg 'install.ps1')`""
+                -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $pkg 'scripts\install.ps1')`""
         } catch {
             throw (T '管理者の許可が得られなかったため、中止しました。' 'Canceled because administrator permission was not given.')
         }

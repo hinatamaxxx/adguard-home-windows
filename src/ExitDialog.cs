@@ -21,7 +21,7 @@ namespace AdGuardHomeTray
             var ok = AddButton(L.T("終了する", "Exit"), ButtonKind.Primary);
             cancel.DialogResult = DialogResult.Cancel;
             ok.DialogResult = DialogResult.OK;
-            AcceptButton = ok;
+            AcceptButton = cancel;   // 既定のボタンもキャンセル（Windows の確認と同じ。Enter と、既定のボタンへのマウスの自動移動の先）
             CancelButton = cancel;
             TopMost = true;
             Shown += delegate { Activate(); cancel.Focus(); };

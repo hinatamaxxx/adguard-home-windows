@@ -93,6 +93,10 @@ namespace AdGuardHomeTray
             BackColor = dark ? Theme.DarkBack : Color.White;
             // 読み込み中に白く光らないよう、ページの背景色も合わせる
             web.DefaultBackgroundColor = BackColor;
+            // ページの配色（prefers-color-scheme）も、トレイと同じ判定で明示する。WebView2 の「自動」は、
+            // PC によって Windows がダークでもライトを返すことがあり、ログイン画面が白くなった
+            if (web.CoreWebView2 != null)
+                web.CoreWebView2.Profile.PreferredColorScheme = dark ? CoreWebView2PreferredColorScheme.Dark : CoreWebView2PreferredColorScheme.Light;
             Theme.ApplyTitleBar(this);
         }
 
@@ -127,7 +131,7 @@ namespace AdGuardHomeTray
             st.IsGeneralAutofillEnabled = false;
             st.AreBrowserAcceleratorKeysEnabled = false; // Ctrl+P（印刷）、Ctrl+F（検索）などを無効に
             // ページの配色（AdGuard Home のテーマ「自動」）を Windows のモードに合わせる
-            core.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Auto;
+            ApplyTheme();
             // AdGuard Home の初期設定画面とログイン画面は、ブラウザーに保存したテーマ（account_theme）を使い、
             // 保存がなければライトにする。開くたびにその時点の判定結果で上書きするので、ページのスクリプトより先に
             // 毎回「自動」を入れ、Windows のライト/ダークに合わせる（ログイン後の画面は AdGuard Home の設定に従う）

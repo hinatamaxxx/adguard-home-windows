@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Manage AdGuard Home from the notification area")]
 [assembly: AssemblyCompany("AdGuard Home for Windows (unofficial)")]
 [assembly: AssemblyProduct("AdGuard Home for Windows")]
-[assembly: AssemblyVersion("1.8.5.0")]
-[assembly: AssemblyFileVersion("1.8.5.0")]
+[assembly: AssemblyVersion("1.8.6.0")]
+[assembly: AssemblyFileVersion("1.8.6.0")]
 
 namespace AdGuardHomeTray
 {

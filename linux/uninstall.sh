@@ -33,11 +33,11 @@ fi
 
 if [ "$keep" -eq 0 ]; then
   python3 -c "import keyring; keyring.delete_password('AdGuardHomeTray', 'login')" 2>/dev/null || true
-  rm -rf "$CONFIG_HOME/$APP_ID" "${XDG_STATE_HOME:-$HOME/.local/state}/$APP_ID" "${XDG_CACHE_HOME:-$HOME/.cache}/$APP_ID"
+  rm -rf "${CONFIG_HOME:?}/$APP_ID" "${XDG_STATE_HOME:-$HOME/.local/state}/$APP_ID" "${XDG_CACHE_HOME:-$HOME/.cache}/$APP_ID"
 fi
 rm -f "$CONFIG_HOME/autostart/$APP_ID.desktop" "$DATA_HOME/applications/$APP_ID.desktop" \
       "$DATA_HOME/icons/hicolor/scalable/apps/$APP_ID.svg" "$HOME/.local/bin/$APP_ID"
-rm -rf "$DATA_HOME/$APP_ID"
+rm -rf "${DATA_HOME:?}/$APP_ID"
 
 if [ "$system" -eq 1 ] && { [ -e /etc/systemd/system/adguard-home-update.timer ] || [ -e /etc/polkit-1/rules.d/50-adguard-home-tray.rules ]; }; then
   sudo systemctl disable --now adguard-home-update.timer 2>/dev/null || true

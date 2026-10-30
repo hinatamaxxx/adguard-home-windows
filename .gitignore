@@ -8,6 +8,8 @@ debian-backup/
 *.bak*
 install.log
 # ツールの作業データ
+__pycache__/
+*.pyc
 .yomiyasu/
 
 # AdGuard のロゴ（商標）は含めない。導入時に AdGuard Home から取得する

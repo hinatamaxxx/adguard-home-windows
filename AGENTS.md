@@ -49,6 +49,16 @@
    6. 端末名を付ける: 管理画面の「設定 → クライアント設定」で永続的クライアント（識別子は ClientId）を追加するか、`scripts\set-client-name.ps1 -Id <ClientId> -Name "<表示名>"`。
 4. 注意をユーザーに伝える: PC がスリープ・電源オフ・AdGuard Home 停止中は、DNS をこの PC に向けた機器はインターネットにつながらない。PC のスリープを切るのがおすすめ。
 
+## Linux（Kubuntu・KDE Plasma）
+
+ユーザーが Linux で使う場合（Kubuntu 26.04 LTS などの apt 系、KDE Plasma 6 を想定）:
+
+1. 普段のユーザーの端末で `curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/linux/get.sh | bash` を実行する（`sudo` は付けない）。途中の `sudo` のパスワードはユーザーが入力する。AdGuard Home 本体がまだなら、末尾を `| bash -s -- --with-adguard-home` にする（公式の `install.sh` で `/opt/AdGuardHome` に入る）。
+2. 初期設定（ユーザーが行う）: トレイアイコンをクリックすると `http://127.0.0.1:3000/` の初期設定画面が開く。ポート 53 が使用中で失敗したら、systemd-resolved のスタブを止める（`/etc/systemd/resolved.conf.d/adguardhome.conf` に `[Resolve]` と `DNSStubListener=no` を書き、`/etc/resolv.conf` を `/run/systemd/resolve/resolv.conf` へのリンクにして `systemctl restart systemd-resolved`。ユーザーの了承を得てから）。
+3. トレイの「その他」→「ログイン情報を設定…」で管理画面のユーザー名とパスワードを保存してもらう（KDE ウォレットに保存）。
+4. 家のほかの機器: ufw で 53 番を LAN から許可してもらう（例: `sudo ufw allow from 192.168.0.0/16 to any port 53`）。
+5. 外出先の iPhone: `sudo ~/.local/share/adguard-home-tray/scripts/configure-adguard.py --enable-funnel-doh` のあと、`~/.local/share/adguard-home-tray/scripts/new-ios-dns-profile.py --client-id <端末名> --display-name "<表示名>" --out-dir <出力先>`。Funnel の変更で権限エラーになったら、`sudo tailscale set --operator=$USER` を案内する。
+
 ## トラブル対応
 
 | 症状 | 対処 |

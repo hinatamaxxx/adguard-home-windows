@@ -8,6 +8,12 @@ PowerShell に次を貼り付けて Enter を押します（管理者でなく�
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
 ```
 
+Linux（Kubuntu・KDE Plasma）では、端末に次を貼り付けます（普段のユーザーで。途中で `sudo` のパスワードを聞かれます）。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/linux/get.sh | bash
+```
+
 AI エージェントに頼む方法は [README](https://github.com/hinatamaxxx/adguard-home-windows#かんたん導入) を見てください。
 
 ## 主な機能
@@ -19,11 +25,14 @@ AI エージェントに頼む方法は [README](https://github.com/hinatamaxxx/
 - Windows の「設定 → アプリ → スタートアップ」で自動起動をオン/オフできる
 - 表示は日本語と英語に対応（Windows の表示言語に合わせる）
 - 外出先の iPhone / iPad からも使える（Tailscale Funnel ＋ DNS 構成プロファイル）
+- Linux 版のトレイアプリ（Kubuntu 26.04 LTS・KDE Plasma 6 のシステムトレイ。メニューは Windows 版と同じ）
 
 ## 添付ファイル
 
 - `adguard-home-windows.zip`: ビルド済みの一式（コマンド 1 行の導入と自動更新が使う）
 - `adguard-home-windows.zip.sha256`: 上の ZIP の SHA-256（自動更新と `get.ps1` が照合に使う）
+- `adguard-home-linux.tar.gz`: Linux 版（KDE Plasma のシステムトレイ用。`linux/get.sh` と自己更新が使う）
+- `adguard-home-linux.tar.gz.sha256`: 上の tar.gz の SHA-256
 
 AdGuard Home 本体は含みません。セットアップ時に AdGuard 公式の配布元から取得し、署名を確認してから入れます。不具合の報告やサポートは受け付けていません（[LICENSE](https://github.com/hinatamaxxx/adguard-home-windows/blob/main/LICENSE) のとおり、現状のまま提供します）。
 
@@ -38,5 +47,7 @@ A setup kit that runs AdGuard Home as a Windows service and lets you manage it f
 ```powershell
 irm https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/get.ps1 | iex
 ```
+
+On Linux (Kubuntu, KDE Plasma), run `curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/linux/get.sh | bash` as your normal user.
 
 See the [English README](https://github.com/hinatamaxxx/adguard-home-windows/blob/main/README.en.md) for details. AdGuard Home itself is not included; the setup downloads it from the official AdGuard servers and checks its signature. Provided as-is: bug reports and support requests are not accepted.

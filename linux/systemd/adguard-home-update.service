@@ -1,0 +1,11 @@
+# AdGuard Home 本体を公式のアップデーターで最新版にする（adguard-home-update.timer から毎日、
+# トレイの「今すぐ確認して更新」からも起動する）。最新ならそのまま終わる。
+[Unit]
+Description=Update AdGuard Home to the latest version
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/opt/AdGuardHome/AdGuardHome
+
+[Service]
+Type=oneshot
+ExecStart=/opt/AdGuardHome/AdGuardHome --update --work-dir /opt/AdGuardHome --config /opt/AdGuardHome/AdGuardHome.yaml

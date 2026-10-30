@@ -6,3 +6,11 @@
 *.md  text
 *.png binary
 *.dll binary
+# Linux 版は LF のまま
+*.sh  text eol=lf
+*.py  text eol=lf
+linux/adguard-home-tray text eol=lf
+*.service text eol=lf
+*.timer text eol=lf
+*.rules text eol=lf
+*.svg text eol=lf

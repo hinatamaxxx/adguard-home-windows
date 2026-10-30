@@ -33,6 +33,8 @@ Double-click the AdGuard Home icon in the notification area. Complete the AdGuar
 
 > This repository does not include AdGuard Home itself. Setup downloads it from the official AdGuard servers. It checks the AdGuard signature before installing it. This project is not affiliated with AdGuard.
 
+For Linux (Kubuntu, KDE Plasma), see [Linux](#linux-kubuntu-kde-plasma) below.
+
 ## Screenshots
 
 **Notification area menu** (the standard Windows menu, with dark mode support)
@@ -137,7 +139,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.8.8 (up to date)
+  This app v1.9.0 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)
@@ -224,6 +226,37 @@ When you turn startup on or off in Windows **Startup** settings, Windows writes 
 - To use Funnel, enable HTTPS certificates in the admin console. The first time you run `tailscale funnel`, follow the link it shows to enable Funnel
 - Run Funnel commands from PowerShell. Git Bash rewrites paths such as `/dns-query/...`
 - Allow incoming AdGuard Home connections (UDP/TCP 53) in the firewall. Tailscale is treated as a Private network
+
+## Linux (Kubuntu, KDE Plasma)
+
+There is also a Linux version of the tray app (`linux/`). It sits in the KDE Plasma 6 system tray (StatusNotifierItem), and its menu matches the Windows version (status, Open dashboard, Protection and service, Updates, More, Exit). It is made for Kubuntu 26.04 LTS (Plasma 6.6).
+
+**Install** (as your normal user; don't add `sudo`)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/linux/get.sh | bash
+```
+
+It checks the SHA-256 of the latest `adguard-home-linux.tar.gz` and runs `install.sh`. It asks for your `sudo` password once, to install the packages it needs (`python3-pyqt6`, `python3-pyqt6.qtwebengine`, `python3-keyring`) and to set up AdGuard Home's daily update. If AdGuard Home isn't installed yet, end the command with `| bash -s -- --with-adguard-home` to install it into `/opt/AdGuardHome` with the official `install.sh`.
+
+| Location | Contents |
+|---|---|
+| `/opt/AdGuardHome/` | AdGuard Home, its settings and data (installed by the official `install.sh`; systemd service `AdGuardHome.service`) |
+| `~/.local/share/adguard-home-tray/` | The tray app (Python + PyQt6), `scripts/`, and `uninstall.sh` |
+| `~/.local/bin/adguard-home-tray` | Launcher (`--open` opens the dashboard) |
+| `~/.local/share/applications/adguard-home-tray.desktop` | "AdGuard Home" in the application menu |
+| `~/.config/autostart/adguard-home-tray.desktop` | Starts at login (switch it in Plasma's **System Settings > Autostart** or in the tray menu) |
+| `~/.config/adguard-home-tray/settings.json` | Tray settings (`web_url` if you changed the dashboard address) |
+| KDE Wallet (Secret Service) | Dashboard login info. Without it, `~/.config/adguard-home-tray/credentials.json` (0600) |
+| `/etc/systemd/system/adguard-home-update.{service,timer}` | Updates AdGuard Home daily (as root, `AdGuardHome --update`). Switch it with **Update automatically (daily)** in the tray |
+| `/etc/polkit-1/rules.d/50-adguard-home-tray.rules` | Lets **Check and update now** run without an admin prompt (only starting this one unit) |
+
+- Starting, stopping, and restarting the service, and switching automatic updates, show a polkit prompt (admin password).
+- The tray updates itself: it checks the SHA-256 of the release's `adguard-home-linux.tar.gz`, replaces itself, and restarts (daily when automatic updates are on).
+- The dashboard opens in its own window (Qt WebEngine) and signs in with the saved login info. Without Qt WebEngine it opens in your default browser.
+- For iPhones away from home: `scripts/configure-adguard.py --enable-funnel-doh` (with `sudo`), `scripts/new-ios-dns-profile.py --client-id my-iphone --display-name "My iPhone"`, and `scripts/set-client-name.py --id my-iphone --name "My iPhone"`. If changing Funnel needs root, run `sudo tailscale set --operator=$USER` first.
+- To use it from other devices at home, allow port 53 in the firewall (ufw), for example `sudo ufw allow from 192.168.0.0/16 to any port 53`.
+- Uninstall: `~/.local/share/adguard-home-tray/uninstall.sh` (keeps AdGuard Home itself; remove it with the official `install.sh -u`).
 
 ## Support
 

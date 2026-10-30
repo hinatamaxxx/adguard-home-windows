@@ -6,3 +6,7 @@
 *.md  text
 *.png binary
 *.dll binary
+# Linux 版はLF のまま
+*.sh  text eol=lf
+*.py  text eol=lf
+linux/** text eol=lf

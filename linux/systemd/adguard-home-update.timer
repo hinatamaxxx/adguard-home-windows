@@ -1,0 +1,12 @@
+# 毎日 4:30 ごろと起動の 10 分後に AdGuard Home を更新する。トレイの「自動で更新する（毎日）」でオン/オフする。
+[Unit]
+Description=Update AdGuard Home daily
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+OnBootSec=10min
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

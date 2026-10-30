@@ -1,4 +1,4 @@
-# ビルド確認と、タグ（v*）を付けたときのリリース用 ZIP の作成
+# ビルド確認と、タグ（v*）を付けたときのリリース（Windows 用 ZIP と Linux 用 tar.gz）の作成
 name: build
 
 on:
@@ -55,9 +55,62 @@ jobs:
             dist/adguard-home-windows.zip
             dist/adguard-home-windows.zip.sha256
 
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check Python and shell scripts
+        run: |
+          python3 -m py_compile linux/adguard-home-tray linux/adguard_home_tray/*.py linux/scripts/*.py
+          shellcheck -S warning linux/*.sh
+          bash -n linux/install.sh linux/uninstall.sh linux/get.sh
+
+      - name: Check the tray starts (offscreen)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-pyqt6 python3-keyring > /dev/null
+          QT_QPA_PLATFORM=offscreen python3 - <<'EOF'
+          import sys
+          sys.path.insert(0, "linux")
+          from PyQt6.QtWidgets import QApplication
+          from adguard_home_tray import tray
+          app = QApplication(sys.argv)
+          t = tray.Tray(app)
+          assert t.menu.actions(), "menu is empty"
+          print("ok:", [a.text() for a in t.menu.actions() if a.text()])
+          EOF
+
+      - name: Make package
+        run: |
+          pkg=adguard-home-linux
+          mkdir -p "dist/$pkg"
+          cp -r linux/adguard-home-tray linux/adguard_home_tray linux/scripts linux/systemd linux/icons                 linux/install.sh linux/uninstall.sh README.md README.en.md LICENSE "dist/$pkg/"
+          find "dist/$pkg" -name '__pycache__' -prune -exec rm -rf {} +
+          tar -C dist --owner=0 --group=0 -czf "dist/$pkg.tar.gz" "$pkg"
+          (cd dist && sha256sum "$pkg.tar.gz" > "$pkg.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: adguard-home-linux
+          path: |
+            dist/adguard-home-linux.tar.gz
+            dist/adguard-home-linux.tar.gz.sha256
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/adguard-home-windows.zip dist/adguard-home-windows.zip.sha256 --title "${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: |
+          gh release create "${{ github.ref_name }}" dist/adguard-home-windows.zip dist/adguard-home-windows.zip.sha256             dist/adguard-home-linux.tar.gz dist/adguard-home-linux.tar.gz.sha256             --title "${{ github.ref_name }}" --notes-file .github/release-notes.md

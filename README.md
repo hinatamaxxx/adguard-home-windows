@@ -33,6 +33,8 @@ https://github.com/hinatamaxxx/adguard-home-windows を導入して。
 
 > AdGuard Home 本体はこのリポジトリに含みません。セットアップ時に AdGuard 公式の配布元からダウンロードし、AdGuard の署名を確認してから入れます。このプロジェクトは AdGuard 公式のものではありません。
 
+Linux（Kubuntu・KDE Plasma）で使う場合は、下の「[Linux](#linuxkubuntukde-plasma)」を参照してください。
+
 ## スクリーンショット
 
 **通知領域のメニュー**（Windows 標準のメニュー。ダークモードに対応）
@@ -137,7 +139,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 ```
 アップデート ▸
   AdGuard Home v0.107.79（最新です）
-  このアプリ v1.8.8（最新です）
+  このアプリ v1.9.0（最新です）
   ─────────────
   今すぐ確認して更新
   ✓ 自動で更新する（毎日）
@@ -224,6 +226,37 @@ Windows の「スタートアップ」でオン/オフを切り替えると、Wi
 - Funnel を使う場合は、管理画面で HTTPS 証明書を有効にし、初めて `tailscale funnel` を実行したときに表示されるリンクから Funnel を有効にする
 - Funnel の設定は PowerShell から実行する（Git Bash では `/dns-query/...` のパスが書き換えられてしまう）
 - ファイアウォールで AdGuard Home の受信（UDP/TCP 53）を許可する（Tailscale は「プライベート」のネットワークとして扱われる）
+
+## Linux（Kubuntu・KDE Plasma）
+
+Linux 版のトレイアプリもあります（`linux/`）。KDE Plasma 6 のシステムトレイ（StatusNotifierItem）に常駐し、メニューの形は Windows 版と同じです（状態、管理画面を開く、保護とサービス、アップデート、その他、アプリを終了する）。Kubuntu 26.04 LTS（Plasma 6.6）向けに作っています。
+
+**入れ方**（普段のユーザーの端末で。`sudo` は付けない）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/main/linux/get.sh | bash
+```
+
+最新リリースの `adguard-home-linux.tar.gz` を SHA-256 で照合し、`install.sh` を実行します。途中で `sudo` のパスワードを 1 回聞かれます（必要なパッケージ `python3-pyqt6`・`python3-pyqt6.qtwebengine`・`python3-keyring` の導入と、AdGuard Home の自動更新の設定のため）。AdGuard Home 本体がまだなら、末尾を `| bash -s -- --with-adguard-home` にすると、公式の `install.sh` で `/opt/AdGuardHome` に入れます。
+
+| 場所 | 内容 |
+|---|---|
+| `/opt/AdGuardHome/` | AdGuard Home 本体・設定・データ（公式の `install.sh` が入れる。systemd のサービス `AdGuardHome.service`） |
+| `~/.local/share/adguard-home-tray/` | トレイアプリ（Python + PyQt6）と `scripts/`、`uninstall.sh` |
+| `~/.local/bin/adguard-home-tray` | 起動コマンド（`--open` で管理画面を開く） |
+| `~/.local/share/applications/adguard-home-tray.desktop` | アプリケーションメニューの「AdGuard Home」 |
+| `~/.config/autostart/adguard-home-tray.desktop` | ログイン時の自動起動（Plasma の「システム設定 → 自動起動」とトレイのメニューのどちらでも切り替えられる） |
+| `~/.config/adguard-home-tray/settings.json` | トレイの設定（管理画面の URL を変えたときは `web_url`） |
+| KDE ウォレット（Secret Service） | 管理画面のログイン情報。使えない環境では `~/.config/adguard-home-tray/credentials.json`（0600） |
+| `/etc/systemd/system/adguard-home-update.{service,timer}` | AdGuard Home を毎日更新する（root。`AdGuardHome --update`）。トレイの「自動で更新する（毎日）」でオン/オフ |
+| `/etc/polkit-1/rules.d/50-adguard-home-tray.rules` | 「今すぐ確認して更新」を管理者の確認なしで実行できるようにする（この 1 つのユニットの開始だけ） |
+
+- サービスの開始・停止・再起動と、自動更新のオン/オフは、polkit の確認画面（管理者のパスワード）を出します。
+- このアプリ自身の更新は、トレイがリリースの `adguard-home-linux.tar.gz` を SHA-256 で照合してから入れ替え、自分で再起動します（自動更新がオンなら毎日）。
+- 管理画面は専用のウィンドウ（Qt WebEngine）で開き、保存したログイン情報で自動ログインします。Qt WebEngine がなければ既定のブラウザーで開きます。
+- 外出先の iPhone 用: `scripts/configure-adguard.py --enable-funnel-doh`（`sudo` で）、`scripts/new-ios-dns-profile.py --client-id my-iphone --display-name "My iPhone"`、`scripts/set-client-name.py --id my-iphone --name "My iPhone"`。Funnel の変更に root が要る場合は、先に `sudo tailscale set --operator=$USER` を実行します。
+- 家のほかの機器から使うときは、ファイアウォール（ufw）で 53 番を許可します（例: `sudo ufw allow from 192.168.0.0/16 to any port 53`）。
+- アンインストール: `~/.local/share/adguard-home-tray/uninstall.sh`（AdGuard Home 本体は残します。本体も消すときは公式の `install.sh -u`）。
 
 ## サポートについて
 

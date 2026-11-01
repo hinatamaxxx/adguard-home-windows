@@ -56,6 +56,7 @@ class Tray(QObject):
         self.filters_updated = None
         self.filters_checked = 0
         self.api_busy = False
+        self.logo_tried = 0
         self.updating = False
         self.web_url = None
         self.stopped_since = None
@@ -330,7 +331,16 @@ class Tray(QObject):
         self._fill_protection()
         self.update_visuals()
 
+    def fetch_logo(self):
+        """公式ロゴがまだなければ、動いている AdGuard Home の管理画面から取得する（1 分に 1 回まで）"""
+        if os.path.exists(icons.LOGO_FILE) or not self.running or time.time() - self.logo_tried < 60:
+            return
+        self.logo_tried = time.time()
+        self.run_async(lambda: icons.fetch_logo(self.dashboard_url()),
+                       lambda saved, error: saved and self.update_visuals())
+
     def refresh_api(self):
+        self.fetch_logo()
         if self.api_busy:
             return
         if not self.running:

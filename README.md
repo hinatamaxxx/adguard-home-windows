@@ -139,7 +139,7 @@ ARM64 版の Windows では AdGuard Home の ARM64 版を入れます（この�
 ```
 アップデート ▸
   AdGuard Home v0.107.79（最新です）
-  このアプリ v1.9.0（最新です）
+  このアプリ v1.9.1（最新です）
   ─────────────
   今すぐ確認して更新
   ✓ 自動で更新する（毎日）
@@ -247,6 +247,7 @@ curl -fsSL https://raw.githubusercontent.com/hinatamaxxx/adguard-home-windows/ma
 | `~/.local/share/applications/adguard-home-tray.desktop` | アプリケーションメニューの「AdGuard Home」 |
 | `~/.config/autostart/adguard-home-tray.desktop` | ログイン時の自動起動（Plasma の「システム設定 → 自動起動」とトレイのメニューのどちらでも切り替えられる） |
 | `~/.config/adguard-home-tray/settings.json` | トレイの設定（管理画面の URL を変えたときは `web_url`） |
+| `~/.config/adguard-home-tray/logo.svg` | トレイのアイコンに使う AdGuard のロゴ（手元の AdGuard Home の管理画面から取得。消すと取り直す） |
 | KDE ウォレット（Secret Service） | 管理画面のログイン情報。使えない環境では `~/.config/adguard-home-tray/credentials.json`（0600） |
 | `/etc/systemd/system/adguard-home-update.{service,timer}` | AdGuard Home を毎日更新する（root。`AdGuardHome --update`）。トレイの「自動で更新する（毎日）」でオン/オフ |
 | `/etc/polkit-1/rules.d/50-adguard-home-tray.rules` | 「今すぐ確認して更新」を管理者の確認なしで実行できるようにする（この 1 つのユニットの開始だけ） |

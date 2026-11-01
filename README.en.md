@@ -139,7 +139,7 @@ The **Updates** menu shows separate versions for AdGuard Home and this app. Subm
 ```
 Updates ▸
   AdGuard Home v0.107.79 (up to date)
-  This app v1.9.0 (up to date)
+  This app v1.9.1 (up to date)
   ─────────────
   Check and update now
   ✓ Update automatically (daily)
@@ -247,6 +247,7 @@ It checks the SHA-256 of the latest `adguard-home-linux.tar.gz` and runs `instal
 | `~/.local/share/applications/adguard-home-tray.desktop` | "AdGuard Home" in the application menu |
 | `~/.config/autostart/adguard-home-tray.desktop` | Starts at login (switch it in Plasma's **System Settings > Autostart** or in the tray menu) |
 | `~/.config/adguard-home-tray/settings.json` | Tray settings (`web_url` if you changed the dashboard address) |
+| `~/.config/adguard-home-tray/logo.svg` | The AdGuard logo for the tray icon (taken from your AdGuard Home dashboard; delete it to fetch it again) |
 | KDE Wallet (Secret Service) | Dashboard login info. Without it, `~/.config/adguard-home-tray/credentials.json` (0600) |
 | `/etc/systemd/system/adguard-home-update.{service,timer}` | Updates AdGuard Home daily (as root, `AdGuardHome --update`). Switch it with **Update automatically (daily)** in the tray |
 | `/etc/polkit-1/rules.d/50-adguard-home-tray.rules` | Lets **Check and update now** run without an admin prompt (only starting this one unit) |
